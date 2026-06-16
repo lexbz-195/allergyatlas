@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { searchProducts } from "./api";
+import { searchProducts, fetchTopMatch } from "./api";
 import { scoreProduct } from "./scoring";
 import { GUIDELINES } from "./guidelines";
-import { TOP_PRODUCTS } from "./topProducts";
+import { TOP_PRODUCT_QUERIES } from "./topProducts";
 
 const C = {
   bgPage:"#FDF4F7",bgCard:"#FFFBFC",primary:"#7B3348",accent:"#C06B82",accentLt:"#FAEAEE",
@@ -227,8 +227,46 @@ function GuidelinesPage({ onBack, onHome }) {
   );
 }
 
-function TopProductsPage({ onBack, onHome }) {
-  const sorted = [...TOP_PRODUCTS].sort((a, b) => b.score - a.score);
+function TopProductsPage({ onBack, onHome, onSelect }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const fetched = await Promise.all(
+        TOP_PRODUCT_QUERIES.map(async q => {
+          try {
+            const product = await fetchTopMatch(q);
+            if (!product) return null;
+            const scored = scoreProduct(product.ingredients);
+            if (scored.score === null) return null;
+            return { product, scored };
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (cancelled) return;
+      // Keep only products that scored well (75+), dedupe by barcode, rank by score
+      const seen = new Set();
+      const ranked = fetched
+        .filter(Boolean)
+        .filter(x => x.scored.score >= 75)
+        .filter(x => {
+          const key = x.product.barcode || x.product.name;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => b.scored.score - a.scored.score);
+      setItems(ranked);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
       <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
@@ -244,42 +282,89 @@ function TopProductsPage({ onBack, onHome }) {
       </nav>
       <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
         <h1 style={{fontSize:28,fontWeight:900,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Highest Scoring Products</h1>
-        <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6}}>These products score highest against the AllergyAtlas criteria, drawn from Australian allergy guidelines. Each entry explains what earned its score and the sources behind it.</p>
+        <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6}}>These products score highest against the AllergyAtlas criteria, drawn from Australian allergy guidelines. Every product here is searchable in the app — each entry shows what earned its score, any detractors, and the sources behind it.</p>
+
+        {loading && (
+          <div style={{textAlign:"center",padding:"40px 0",color:C.textLight}}>
+            <div style={{fontSize:24,marginBottom:8,animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</div>
+            <div style={{fontSize:13}}>Scoring live products…</div>
+          </div>
+        )}
+
+        {!loading && items.length === 0 && (
+          <div style={{padding:"24px",borderRadius:18,background:C.bgCard,border:`1.5px solid ${C.border}`,textAlign:"center"}}>
+            <div style={{fontSize:13,color:C.textMid}}>Couldn't load top products right now. Please try again shortly.</div>
+          </div>
+        )}
 
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          {sorted.map((p, i) => {
-            const { color, bg, label } = getScoreInfo(p.score);
+          {items.map(({ product, scored }, i) => {
+            const { color, bg, label } = getScoreInfo(scored.score);
             return (
               <div key={i} style={{background:C.bgCard,borderRadius:18,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
-                <div style={{padding:"18px 20px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`}}>
+                {/* Header */}
+                <div onClick={()=>onSelect(product)} style={{padding:"18px 20px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,cursor:"pointer"}} title="View full product details">
                   <div style={{position:"relative",flexShrink:0}}>
-                    <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{p.image}</div>
+                    {product.image
+                      ? <img src={product.image} alt={product.name} style={{width:48,height:48,borderRadius:14,objectFit:"cover",background:bg}} onError={e=>e.target.style.display="none"}/>
+                      : <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧴</div>}
                     <div style={{position:"absolute",top:-8,left:-8,width:22,height:22,borderRadius:99,background:C.primary,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{p.brand} · {p.category}</div>
-                    <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{p.name}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{product.brand} · {product.category}</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{product.name}</div>
                   </div>
                   <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{p.score}</div>
+                    <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{scored.score}</div>
                     <div style={{fontSize:10,fontWeight:600,color}}>{label}</div>
                   </div>
                 </div>
-                <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Why it scored highly</div>
-                  {p.reasons.map((r, j) => (
-                    <div key={j} style={{display:"flex",gap:8,padding:"4px 0"}}>
-                      <span style={{color:C.safe,fontWeight:700,fontSize:13,flexShrink:0}}>✓</span>
-                      <span style={{fontSize:13,color:C.textMid,lineHeight:1.5}}>{r}</span>
+
+                {/* Food derivative warning */}
+                {scored.foodDerivatives.length > 0 && (
+                  <div style={{margin:"14px 20px 0",padding:"10px 14px",borderRadius:12,background:"#FFF8E1",border:"1.5px solid #F0C040"}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"#856404"}}>🌾 Contains food derivatives</span>
+                    <p style={{margin:"4px 0 0",fontSize:12,color:"#6D5208",lineHeight:1.5}}>{scored.foodDerivatives.join(", ")} — ASCIA guidelines advise caution with food-derived ingredients on infants not yet introduced to solids.</p>
+                  </div>
+                )}
+
+                {/* Why it scored highly */}
+                {scored.badges.length > 0 && (
+                  <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Why it scored highly</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {scored.badges.map((b, j) => (
+                        <span key={j} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:99,fontSize:11,fontWeight:600,background:C.safeBg,color:C.safe,border:`1px solid ${C.safe}22`}}>✓ {b}</span>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                {/* Detractors with reasons + sources */}
+                {scored.detractors.length > 0 && (
+                  <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:10}}>Detractors</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {scored.detractors.map((d, j) => (
+                        <div key={j} style={{padding:"12px 14px",borderRadius:12,background:C.dangerBg,border:`1px solid ${C.danger}22`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:4}}>
+                            <span style={{fontSize:13,fontWeight:700,color:C.danger}}>⚠ {d.name}</span>
+                            <span style={{fontSize:12,fontWeight:700,color:C.danger,flexShrink:0}}>-{d.penalty}</span>
+                          </div>
+                          <p style={{margin:"0 0 6px",fontSize:12,color:C.textMid,lineHeight:1.55}}>{d.reason}</p>
+                          <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none"}}>📖 Source: {d.source} ↗</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Guideline sources for the positive score */}
                 <div style={{padding:"12px 20px"}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Sources</div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Scoring sources</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                    {p.sources.map((s, j) => (
-                      <a key={j} href={s.url} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none",padding:"4px 12px",borderRadius:99,background:C.accentLt,border:`1px solid ${C.accent}22`}}>📖 {s.name} ↗</a>
-                    ))}
+                    <a href="https://www.allergy.org.au/patients/skin-allergy/eczema" target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none",padding:"4px 12px",borderRadius:99,background:C.accentLt,border:`1px solid ${C.accent}22`}}>📖 ASCIA — Eczema guidance ↗</a>
+                    <a href="https://www.dermcoll.edu.au" target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none",padding:"4px 12px",borderRadius:99,background:C.accentLt,border:`1px solid ${C.accent}22`}}>📖 Australasian College of Dermatologists ↗</a>
                   </div>
                 </div>
               </div>
@@ -332,7 +417,7 @@ export default function App() {
   const goHome = () => { setShowGuidelines(false); setShowTop(false); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
 
   if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)} onHome={goHome}/>;
-  if (showTop) return <TopProductsPage onBack={()=>setShowTop(false)} onHome={goHome}/>;
+  if (showTop) return <TopProductsPage onBack={()=>setShowTop(false)} onHome={goHome} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
 
   return (
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FDE8EF 0%,${C.bgPage} 52%,#F2EBF5 100%)`,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>

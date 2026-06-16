@@ -105,3 +105,10 @@ function inferCategory(cats) {
   if (/food|feed|formula|milk/.test(c))                          return "Baby Food";
   return "Baby Product";
 }
+
+// Fetch the single best scoreable product for a query (used by the Top Products page)
+export async function fetchTopMatch(query) {
+  const results = await searchProducts(query);
+  // searchProducts already filters to scoreable products; return the first match
+  return results.length > 0 ? results[0] : null;
+}
