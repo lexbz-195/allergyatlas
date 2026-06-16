@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { searchProducts } from "./api";
 import { scoreProduct } from "./scoring";
 import { GUIDELINES } from "./guidelines";
+import { TOP_PRODUCTS } from "./topProducts";
 
 const C = {
   bgPage:"#FDF4F7",bgCard:"#FFFBFC",primary:"#7B3348",accent:"#C06B82",accentLt:"#FAEAEE",
@@ -226,6 +227,73 @@ function GuidelinesPage({ onBack, onHome }) {
   );
 }
 
+function TopProductsPage({ onBack, onHome }) {
+  const sorted = [...TOP_PRODUCTS].sort((a, b) => b.score - a.score);
+  return (
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
+      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
+        <div onClick={onHome} role="button" tabIndex={0}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}}
+          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
+          title="Back to search">
+          <LogoMark size={32}/>
+          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        </div>
+        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Highest Scoring Products</span>
+      </nav>
+      <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
+        <h1 style={{fontSize:28,fontWeight:900,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Highest Scoring Products</h1>
+        <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6}}>These products score highest against the AllergyAtlas criteria, drawn from Australian allergy guidelines. Each entry explains what earned its score and the sources behind it.</p>
+
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {sorted.map((p, i) => {
+            const { color, bg, label } = getScoreInfo(p.score);
+            return (
+              <div key={i} style={{background:C.bgCard,borderRadius:18,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+                <div style={{padding:"18px 20px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{position:"relative",flexShrink:0}}>
+                    <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{p.image}</div>
+                    <div style={{position:"absolute",top:-8,left:-8,width:22,height:22,borderRadius:99,background:C.primary,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{p.brand} · {p.category}</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{p.name}</div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{p.score}</div>
+                    <div style={{fontSize:10,fontWeight:600,color}}>{label}</div>
+                  </div>
+                </div>
+                <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Why it scored highly</div>
+                  {p.reasons.map((r, j) => (
+                    <div key={j} style={{display:"flex",gap:8,padding:"4px 0"}}>
+                      <span style={{color:C.safe,fontWeight:700,fontSize:13,flexShrink:0}}>✓</span>
+                      <span style={{fontSize:13,color:C.textMid,lineHeight:1.5}}>{r}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{padding:"12px 20px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Sources</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                    {p.sources.map((s, j) => (
+                      <a key={j} href={s.url} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none",padding:"4px 12px",borderRadius:99,background:C.accentLt,border:`1px solid ${C.accent}22`}}>📖 {s.name} ↗</a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p style={{marginTop:24,fontSize:11,color:C.textLight,textAlign:"center",lineHeight:1.6}}>
+          Scores reflect the AllergyAtlas criteria based on Australian allergy guidelines. Always consult your GP, paediatrician or allergist before making medical decisions.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [query,setQuery]               = useState("");
   const [results,setResults]           = useState([]);
@@ -234,6 +302,7 @@ export default function App() {
   const [showDrop,setShowDrop]         = useState(false);
   const [loading,setLoading]           = useState(false);
   const [showGuidelines,setShowGuidelines] = useState(false);
+  const [showTop,setShowTop] = useState(false);
   const [error,setError]               = useState(null);
   const inputRef  = useRef(null);
   const debounceRef = useRef(null);
@@ -260,9 +329,10 @@ export default function App() {
 
   const handleSelect = p => { setSelected(p); setQuery(p.name); setShowDrop(false); };
   const handleClose  = () => { setSelected(null); setQuery(""); setResults([]); setTimeout(()=>inputRef.current?.focus(),80); };
-  const goHome = () => { setShowGuidelines(false); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
+  const goHome = () => { setShowGuidelines(false); setShowTop(false); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
 
   if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)} onHome={goHome}/>;
+  if (showTop) return <TopProductsPage onBack={()=>setShowTop(false)} onHome={goHome}/>;
 
   return (
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FDE8EF 0%,${C.bgPage} 52%,#F2EBF5 100%)`,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -331,15 +401,26 @@ export default function App() {
         </div>
 
         {!selected && !query && (
-          <div style={{marginTop:18,display:"flex",gap:7,flexWrap:"wrap",justifyContent:"center"}}>
-            {["WaterWipes","QV Baby","Aveeno Baby","Cetaphil Baby","Sudocrem"].map(s => (
-              <button key={s} onClick={()=>{setQuery(s);inputRef.current?.focus();}}
-                style={{padding:"6px 14px",borderRadius:99,fontSize:12,fontWeight:600,background:"#fff",color:C.primary,border:`1.5px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
-                onMouseEnter={e=>{e.currentTarget.style.background=C.accentLt;e.currentTarget.style.borderColor=C.accent;}}
-                onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=C.border;}}
-              >{s}</button>
-            ))}
+          <div style={{marginTop:18,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+            <span style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase"}}>Popular brands</span>
+            <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"center"}}>
+              {["QV","Cetaphil","Bunjie","Mustela"].map(s => (
+                <button key={s} onClick={()=>{setQuery(s);inputRef.current?.focus();}}
+                  style={{padding:"6px 16px",borderRadius:99,fontSize:13,fontWeight:600,background:"#fff",color:C.primary,border:`1.5px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background=C.accentLt;e.currentTarget.style.borderColor=C.accent;}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=C.border;}}
+                >{s}</button>
+              ))}
+            </div>
           </div>
+        )}
+
+        {!selected && !query && (
+          <button onClick={()=>setShowTop(true)}
+            style={{marginTop:26,display:"inline-flex",alignItems:"center",gap:8,padding:"11px 22px",borderRadius:99,border:"none",background:`linear-gradient(135deg,${C.primary},#A84E66)`,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.primary}44`,transition:"opacity .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.opacity=".9"}
+            onMouseLeave={e=>e.currentTarget.style.opacity="1"}
+          >🏆 Highest scoring products</button>
         )}
 
         {error && !selected && (
