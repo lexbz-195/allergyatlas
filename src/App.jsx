@@ -118,6 +118,25 @@ function ProductCard({ product, onClose }) {
               </div>
             </div>
           )}
+          {scored.detractors.length > 0 && (
+            <div style={{padding:"16px 24px",borderBottom:`1px solid ${C.border}`}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:10}}>Why these ingredients were flagged</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {scored.detractors.map((d,i) => (
+                  <div key={i} style={{padding:"12px 14px",borderRadius:12,background:C.dangerBg,border:`1px solid ${C.danger}22`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:700,color:C.danger}}>⚠ {d.name}</span>
+                      <span style={{fontSize:12,fontWeight:700,color:C.danger,flexShrink:0}}>-{d.penalty}</span>
+                    </div>
+                    <p style={{margin:"0 0 6px",fontSize:12,color:C.textMid,lineHeight:1.55}}>{d.reason}</p>
+                    <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none"}}>
+                      📖 Source: {d.source} ↗
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{padding:"14px 24px"}}>
             <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Ingredients</div>
             <p style={{margin:0,fontSize:12,color:C.textLight,lineHeight:1.7,maxHeight:100,overflow:"auto"}}>{product.ingredients}</p>
@@ -159,13 +178,18 @@ function SearchRow({ product, onClick }) {
   );
 }
 
-function GuidelinesPage({ onBack }) {
+function GuidelinesPage({ onBack, onHome }) {
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
       <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
         <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
-        <LogoMark size={32}/>
-        <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        <div onClick={onHome} role="button" tabIndex={0}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}}
+          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
+          title="Back to search">
+          <LogoMark size={32}/>
+          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        </div>
         <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Australian Guidelines</span>
       </nav>
       <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
@@ -236,8 +260,9 @@ export default function App() {
 
   const handleSelect = p => { setSelected(p); setQuery(p.name); setShowDrop(false); };
   const handleClose  = () => { setSelected(null); setQuery(""); setResults([]); setTimeout(()=>inputRef.current?.focus(),80); };
+  const goHome = () => { setShowGuidelines(false); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
 
-  if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)}/>;
+  if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)} onHome={goHome}/>;
 
   return (
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FDE8EF 0%,${C.bgPage} 52%,#F2EBF5 100%)`,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -253,7 +278,10 @@ export default function App() {
       `}</style>
 
       <nav style={{padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div onClick={goHome} role="button" tabIndex={0}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")goHome();}}
+          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
+          title="Back to search">
           <LogoMark size={38}/>
           <span style={{fontSize:17,fontWeight:800,color:C.primary,letterSpacing:-.5}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
         </div>

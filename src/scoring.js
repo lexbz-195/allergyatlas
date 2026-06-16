@@ -1,7 +1,7 @@
 // ─── AllergyAtlas Scoring Engine ─────────────────────────────────────────────
 // Based on ASCIA (2026), NAC, A&AA, NACE and FSANZ guidelines
 
-// Ingredients that are food derivatives — flagged for pre-solid infants per ASCIA
+// Food derivatives — flagged for pre-solid infants per ASCIA
 export const FOOD_DERIVATIVES = [
   { match: /avena\s*sativa|oat(meal|s)?|colloidal\s*oat/i,       name: "Oat / Colloidal oatmeal",    penalty: 18 },
   { match: /arachis\s*oil|peanut\s*oil/i,                         name: "Peanut oil",                  penalty: 25 },
@@ -17,27 +17,123 @@ export const FOOD_DERIVATIVES = [
   { match: /citrus\s*(aurantium|limon|sinensis)|lemon\s*extract/i,name: "Citrus extract",              penalty: 8  },
 ];
 
-// Fragrances and known skin sensitisers
+// Sensitisers — each carries a plain-English reason and a cited source
 export const SENSITISERS = [
-  { match: /\bparfum\b|\bfragrance\b|\bscent\b/i,                 name: "Fragrance/parfum",            penalty: 35 },
-  { match: /\blanolin\b/i,                                         name: "Lanolin (wool derivative)",   penalty: 12 },
-  { match: /benzyl\s*alcohol/i,                                    name: "Benzyl alcohol",              penalty: 10 },
-  { match: /methylisothiazolinone|MIT\b/i,                         name: "Methylisothiazolinone (MIT)", penalty: 20 },
-  { match: /methylchloroisothiazolinone|MCIT\b/i,                  name: "Methylchloroisothiazolinone", penalty: 20 },
-  { match: /formaldehyde|dmdm\s*hydantoin|imidazolidinyl\s*urea/i,name: "Formaldehyde releaser",       penalty: 22 },
-  { match: /sodium\s*lauryl\s*sulph(ate|ate)|SLS\b/i,             name: "SLS (harsh surfactant)",      penalty: 15 },
-  { match: /sodium\s*laureth\s*sulph(ate|ate)|SLES\b/i,           name: "SLES (surfactant)",           penalty: 8  },
-  { match: /propylene\s*glycol/i,                                  name: "Propylene glycol",            penalty: 8  },
-  { match: /phenoxyethanol/i,                                      name: "Phenoxyethanol (preservative)",penalty: 10},
-  { match: /sodium\s*benzoate/i,                                   name: "Sodium benzoate (preservative)",penalty: 10},
-  { match: /parabens?|(methyl|ethyl|propyl|butyl)\s*paraben/i,    name: "Parabens",                    penalty: 12 },
-  { match: /mineral\s*oil|paraffinum\s*liquidum/i,                 name: "Mineral oil",                 penalty: 6  },
-  { match: /artificial\s*colo(u)?r|\bfd&c\b|\bci\s*\d{5}\b/i,    name: "Artificial colourant",        penalty: 8  },
-  { match: /triclosan/i,                                           name: "Triclosan",                   penalty: 18 },
-  { match: /polyethylene\s*glycol|PEG-\d/i,                       name: "PEG compound",                penalty: 6  },
+  {
+    match: /\bparfum\b|\bfragrance\b|\bscent\b/i,
+    name: "Fragrance/parfum", penalty: 35,
+    reason: "Fragrance is one of the most common causes of allergic contact dermatitis in children. ASCIA recommends fragrance-free products for all infants with eczema or sensitive skin.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
+  },
+  {
+    match: /\blanolin\b/i,
+    name: "Lanolin (wool derivative)", penalty: 12,
+    reason: "Lanolin is derived from sheep's wool and can cross-react in babies with wool sensitivity. ASCIA lists wool and lanolin among common irritants for eczema-prone skin.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
+  },
+  {
+    match: /benzyl\s*alcohol/i,
+    name: "Benzyl alcohol", penalty: 10,
+    reason: "Benzyl alcohol is a preservative and solvent that can irritate broken or very sensitive infant skin and is a recognised contact allergen.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /methylisothiazolinone|(?<!chloro)\bMIT\b/i,
+    name: "Methylisothiazolinone (MIT)", penalty: 20,
+    reason: "MIT is a preservative and a leading cause of allergic contact dermatitis. The Australasian College of Dermatologists has highlighted rising rates of MIT contact allergy.",
+    source: "Australasian College of Dermatologists — MIT contact allergy",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /methylchloroisothiazolinone|MCIT\b/i,
+    name: "Methylchloroisothiazolinone (MCI)", penalty: 20,
+    reason: "MCI is a preservative frequently paired with MIT and is a known potent contact sensitiser, particularly on sensitive infant skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /formaldehyde|dmdm\s*hydantoin|imidazolidinyl\s*urea/i,
+    name: "Formaldehyde releaser", penalty: 22,
+    reason: "Formaldehyde-releasing preservatives are recognised skin sensitisers and contact allergens, best avoided on sensitive infant skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /sodium\s*lauryl\s*sulph?ate|\bSLS\b/i,
+    name: "Sodium lauryl sulfate (SLS)", penalty: 15,
+    reason: "SLS is a harsh surfactant that strips natural oils and can damage the skin barrier, worsening eczema. ASCIA recommends soap-free, gentle cleansers for eczema-prone skin.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
+  },
+  {
+    match: /sodium\s*laureth\s*sulph?ate|\bSLES\b/i,
+    name: "Sodium laureth sulfate (SLES)", penalty: 8,
+    reason: "SLES is a milder surfactant than SLS but can still irritate compromised skin barriers in eczema-prone infants.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
+  },
+  {
+    match: /propylene\s*glycol/i,
+    name: "Propylene glycol", penalty: 8,
+    reason: "Propylene glycol is a humectant and penetration enhancer that can act as an irritant and occasional contact allergen on sensitive skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /phenoxyethanol/i,
+    name: "Phenoxyethanol (preservative)", penalty: 10,
+    reason: "Phenoxyethanol is a widely used preservative that can irritate highly sensitive or eczema-prone infant skin and occasionally triggers contact reactions.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /sodium\s*benzoate/i,
+    name: "Sodium benzoate (preservative)", penalty: 10,
+    reason: "Sodium benzoate is a preservative that can cause irritation and, in some infants, contact sensitivity on delicate skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /parabens?|(methyl|ethyl|propyl|butyl)\s*paraben/i,
+    name: "Parabens", penalty: 12,
+    reason: "Parabens are preservatives that can act as contact allergens, especially when applied to damaged or inflamed eczematous skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /mineral\s*oil|paraffinum\s*liquidum/i,
+    name: "Mineral oil", penalty: 6,
+    reason: "Mineral oil is an occlusive that is generally low-risk but is not the preferred emollient base under ASCIA guidance, which favours simple ceramide- or glycerin-based moisturisers.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
+  },
+  {
+    match: /artificial\s*colo(u)?r|\bfd&c\b|\bci\s*\d{5}\b/i,
+    name: "Artificial colourant", penalty: 8,
+    reason: "Artificial colourants and dyes serve no skincare function and can act as irritants or sensitisers on infant skin.",
+    source: "Allergy & Anaphylaxis Australia — reading labels",
+    sourceUrl: "https://allergyfacts.org.au/category/food-labels/",
+  },
+  {
+    match: /triclosan/i,
+    name: "Triclosan", penalty: 18,
+    reason: "Triclosan is an antibacterial agent associated with skin irritation and contact allergy, and is not recommended for routine use on infant skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /polyethylene\s*glycol|PEG-\d/i,
+    name: "PEG compound", penalty: 6,
+    reason: "PEG compounds can enhance skin penetration of other ingredients and may irritate compromised skin barriers in eczema-prone infants.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
 ];
 
-// Ingredients that are beneficial / ASCIA recommended
+// Beneficial / ASCIA-favoured ingredients
 export const POSITIVES = [
   { match: /glycer(in|ol)/i,                                       name: "Glycerin (humectant)",        bonus: 8  },
   { match: /ceramide/i,                                            name: "Ceramide (barrier repair)",   bonus: 12 },
@@ -52,17 +148,15 @@ export const POSITIVES = [
   { match: /tocopherol|vitamin\s*e/i,                              name: "Vitamin E (antioxidant)",     bonus: 5  },
 ];
 
-// ── Main scoring function ─────────────────────────────────────────────────────
+// ── Helper: does this product have scoreable ingredient data? ────────────────
+export function hasScoreableData(ingredientText) {
+  return !!ingredientText && ingredientText.trim().length >= 5;
+}
+
+// ── Main scoring function ────────────────────────────────────────────────────
 export function scoreProduct(ingredientText) {
-  if (!ingredientText || ingredientText.trim().length < 5) {
-    return {
-      score: null,
-      flags: [],
-      badges: [],
-      foodDerivatives: [],
-      breakdown: [],
-      lostPointsReason: null,
-    };
+  if (!hasScoreableData(ingredientText)) {
+    return { score: null, flags: [], badges: [], foodDerivatives: [], breakdown: [], detractors: [], lostPointsReason: null };
   }
 
   const text = ingredientText;
@@ -71,10 +165,10 @@ export function scoreProduct(ingredientText) {
   const badges = [];
   const foodDerivatives = [];
   const breakdown = [];
+  const detractors = [];   // detailed, cited reasons for non-food deductions
   const deductions = [];
-  const additions = [];
 
-  // Check sensitisers
+  // Sensitisers (non-food) — capture reason + source
   for (const item of SENSITISERS) {
     if (item.match.test(text)) {
       const actualPenalty = Math.min(item.penalty, score);
@@ -82,10 +176,17 @@ export function scoreProduct(ingredientText) {
       flags.push(item.name);
       breakdown.push({ label: item.name, impact: `-${actualPenalty}`, positive: false });
       deductions.push(`${item.name} (-${actualPenalty})`);
+      detractors.push({
+        name: item.name,
+        penalty: actualPenalty,
+        reason: item.reason,
+        source: item.source,
+        sourceUrl: item.sourceUrl,
+      });
     }
   }
 
-  // Check food derivatives
+  // Food derivatives
   for (const item of FOOD_DERIVATIVES) {
     if (item.match.test(text)) {
       const actualPenalty = Math.min(item.penalty, score);
@@ -96,7 +197,7 @@ export function scoreProduct(ingredientText) {
     }
   }
 
-  // Check positives — cap bonus at 15 total so base score ceiling is still 100
+  // Positives — cap total bonus at 15
   let totalBonus = 0;
   for (const item of POSITIVES) {
     if (item.match.test(text)) {
@@ -105,26 +206,23 @@ export function scoreProduct(ingredientText) {
         totalBonus += actualBonus;
         badges.push(item.name);
         breakdown.push({ label: item.name, impact: `+${actualBonus}`, positive: true });
-        additions.push(item.name);
       }
     }
   }
 
-  // Check fragrance-free explicitly as a badge
+  // Fragrance-free badge
   if (!/\bparfum\b|\bfragrance\b|\bscent\b/i.test(text)) {
     badges.push("Fragrance-free");
     breakdown.push({ label: "No fragrance detected", impact: "+0 (baseline met)", positive: true });
   }
 
-  // Clamp score
   score = Math.max(0, Math.min(100, Math.round(score)));
 
-  // Build lost-points sentence
   let lostPointsReason = null;
   if (deductions.length > 0) {
     const totalLost = 100 - score + totalBonus;
     lostPointsReason = `Lost ${totalLost} points due to: ${deductions.join("; ")}.`;
   }
 
-  return { score, flags, badges, foodDerivatives, breakdown, lostPointsReason };
+  return { score, flags, badges, foodDerivatives, breakdown, detractors, lostPointsReason };
 }

@@ -2,6 +2,8 @@
 // Uses Open Beauty Facts (skincare/baby products) + Open Food Facts (food/wipes)
 // Both are free, open APIs — no key required.
 
+import { hasScoreableData } from "./scoring";
+
 const BEAUTY_API  = "https://world.openbeautyfacts.org";
 const FOOD_API    = "https://world.openfoodfacts.org";
 
@@ -17,11 +19,12 @@ export async function searchProducts(query) {
   const beauty = beautyResults.status === "fulfilled" ? beautyResults.value : [];
   const food   = foodResults.status   === "fulfilled" ? foodResults.value   : [];
 
-  // Merge, deduplicate by barcode, beauty products first
+  // Merge, deduplicate by barcode, beauty products first.
+  // Only keep products that have scoreable ingredient data.
   const seen = new Set();
   const merged = [];
   for (const p of [...beauty, ...food]) {
-    if (p.barcode && !seen.has(p.barcode)) {
+    if (p.barcode && !seen.has(p.barcode) && hasScoreableData(p.ingredients)) {
       seen.add(p.barcode);
       merged.push(p);
     }
