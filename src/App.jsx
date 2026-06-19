@@ -640,13 +640,24 @@ export default function App() {
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:selected?"flex-start":"center",padding:selected?"24px 20px":"0 20px 80px",maxWidth:660,margin:"0 auto",width:"100%",transition:"all .4s cubic-bezier(0.16,1,0.3,1)"}}>
 
         {!selected && (
-          <div style={{textAlign:"center",marginBottom:32,animation:"fadeIn 0.5s ease"}}>
+          <div style={{textAlign:"center",marginBottom:24,animation:"fadeIn 0.5s ease"}}>
             <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:800,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
               Check a product<br/>
               <span style={{background:`linear-gradient(110deg,${C.primary},${C.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 against allergy guidelines
               </span>
             </h1>
+          </div>
+        )}
+
+        {!selected && (
+          <div style={{display:"flex",gap:6,padding:5,borderRadius:99,background:"#fff",border:`1.5px solid ${C.border}`,marginBottom:28,boxShadow:"0 2px 10px rgba(169,63,85,0.06)"}}>
+            <div style={{padding:"9px 28px",borderRadius:99,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.primary},${C.primaryDk})`,color:"#fff",boxShadow:`0 2px 8px ${C.primary}33`}}>🔍 Check</div>
+            <button onClick={goFind}
+              style={{padding:"9px 28px",borderRadius:99,fontSize:14,fontWeight:700,background:"transparent",color:C.textMid,border:"none",cursor:"pointer",fontFamily:"inherit",transition:"color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.color=C.primary}
+              onMouseLeave={e=>e.currentTarget.style.color=C.textMid}
+            >🧭 Find</button>
           </div>
         )}
 
