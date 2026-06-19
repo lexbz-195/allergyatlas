@@ -3,7 +3,7 @@
 
 // Food derivatives — flagged for pre-solid infants per ASCIA
 export const FOOD_DERIVATIVES = [
-  { match: /avena\s*sativa|oat(meal|s)?|colloidal\s*oat/i,       name: "Oat / Colloidal oatmeal",    penalty: 18 },
+  { match: /avena\s*sativa|\boat(meal|s)?\b|colloidal\s*oat/i,    name: "Oat / Colloidal oatmeal",    penalty: 18 },
   { match: /arachis\s*oil|peanut\s*oil/i,                         name: "Peanut oil",                  penalty: 25 },
   { match: /prunus\s*(amygdalus|dulcis)|almond\s*oil/i,           name: "Almond oil",                  penalty: 15 },
   { match: /triticum\s*vulgare|wheat\s*(germ|protein|bran)/i,     name: "Wheat derivative",            penalty: 18 },

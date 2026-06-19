@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { searchProducts, fetchTopMatch } from "./api";
+import { searchProducts, fetchByCategory, fetchAllProducts } from "./api";
 import { scoreProduct } from "./scoring";
 import { GUIDELINES } from "./guidelines";
-import { TOP_PRODUCT_QUERIES } from "./topProducts";
+import { CATEGORIES } from "./categories";
 
 const C = {
   bgPage:"#FDF4F7",bgCard:"#FFFBFC",primary:"#7B3348",accent:"#C06B82",accentLt:"#FAEAEE",
@@ -148,7 +148,7 @@ function ProductCard({ product, onClose }) {
           <div style={{padding:"16px",borderRadius:12,background:C.accentLt,border:`1.5px solid ${C.border}`,textAlign:"center"}}>
             <div style={{fontSize:22,marginBottom:6}}>📋</div>
             <div style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:4}}>No ingredient list found</div>
-            <div style={{fontSize:12,color:C.textLight,lineHeight:1.5}}>This product doesn't have ingredients in the Open Beauty Facts database yet. You can <a href="https://world.openbeautyfacts.org" target="_blank" rel="noopener noreferrer" style={{color:C.primary}}>contribute ingredient data</a> to help other parents.</div>
+            <div style={{fontSize:12,color:C.textLight,lineHeight:1.5}}>This product doesn't have an ingredient list recorded yet, so it can't be scored.</div>
           </div>
         </div>
       )}
@@ -235,34 +235,16 @@ function TopProductsPage({ onBack, onHome, onSelect }) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const fetched = await Promise.all(
-        TOP_PRODUCT_QUERIES.map(async q => {
-          try {
-            const product = await fetchTopMatch(q);
-            if (!product) return null;
-            const scored = scoreProduct(product.ingredients);
-            if (scored.score === null) return null;
-            return { product, scored };
-          } catch {
-            return null;
-          }
-        })
-      );
-      if (cancelled) return;
-      // Keep only products that scored well (75+), dedupe by barcode, rank by score
-      const seen = new Set();
-      const ranked = fetched
-        .filter(Boolean)
-        .filter(x => x.scored.score >= 75)
-        .filter(x => {
-          const key = x.product.barcode || x.product.name;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        })
-        .sort((a, b) => b.scored.score - a.scored.score);
-      setItems(ranked);
-      setLoading(false);
+      try {
+        const products = await fetchAllProducts();
+        const ranked = products
+          .map(product => ({ product, scored: scoreProduct(product.ingredients) }))
+          .filter(x => x.scored.score !== null && x.scored.score >= 75)
+          .sort((a, b) => b.scored.score - a.scored.score);
+        if (!cancelled) { setItems(ranked); setLoading(false); }
+      } catch {
+        if (!cancelled) { setItems([]); setLoading(false); }
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -379,6 +361,171 @@ function TopProductsPage({ onBack, onHome, onSelect }) {
   );
 }
 
+// Reusable ranked product card (used by Find category pages)
+function RankedProductCard({ product, scored, rank, onSelect }) {
+  const { color, bg, label } = getScoreInfo(scored.score);
+  return (
+    <div style={{background:C.bgCard,borderRadius:18,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+      <div onClick={()=>onSelect(product)} style={{padding:"18px 20px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,cursor:"pointer"}} title="View full product details">
+        <div style={{position:"relative",flexShrink:0}}>
+          {product.image
+            ? <img src={product.image} alt={product.name} style={{width:48,height:48,borderRadius:14,objectFit:"cover",background:bg}} onError={e=>e.target.style.display="none"}/>
+            : <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧴</div>}
+          {rank != null && <div style={{position:"absolute",top:-8,left:-8,width:22,height:22,borderRadius:99,background:C.primary,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{rank}</div>}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{product.brand} · {product.category}</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{product.name}</div>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{scored.score}</div>
+          <div style={{fontSize:10,fontWeight:600,color}}>{label}</div>
+        </div>
+      </div>
+      {scored.foodDerivatives.length > 0 && (
+        <div style={{margin:"14px 20px 0",padding:"10px 14px",borderRadius:12,background:"#FFF8E1",border:"1.5px solid #F0C040"}}>
+          <span style={{fontSize:12,fontWeight:700,color:"#856404"}}>🌾 Contains food derivatives</span>
+          <p style={{margin:"4px 0 0",fontSize:12,color:"#6D5208",lineHeight:1.5}}>{scored.foodDerivatives.join(", ")} — ASCIA guidelines advise caution with food-derived ingredients on infants not yet introduced to solids.</p>
+        </div>
+      )}
+      {scored.badges.length > 0 && (
+        <div style={{padding:"14px 20px",borderBottom: scored.detractors.length>0 ? `1px solid ${C.border}`:"none"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:8}}>Why it scored highly</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {scored.badges.map((b, j) => (
+              <span key={j} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:99,fontSize:11,fontWeight:600,background:C.safeBg,color:C.safe,border:`1px solid ${C.safe}22`}}>✓ {b}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {scored.detractors.length > 0 && (
+        <div style={{padding:"14px 20px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:10}}>Detractors</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {scored.detractors.map((d, j) => (
+              <div key={j} style={{padding:"12px 14px",borderRadius:12,background:C.dangerBg,border:`1px solid ${C.danger}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:4}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.danger}}>⚠ {d.name}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:C.danger,flexShrink:0}}>-{d.penalty}</span>
+                </div>
+                <p style={{margin:"0 0 6px",fontSize:12,color:C.textMid,lineHeight:1.55}}>{d.reason}</p>
+                <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none"}}>📖 Source: {d.source} ↗</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Find — category landing (Krumbled-style editorial panels)
+function FindHome({ onBack, onHome, onOpenCategory }) {
+  return (
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
+      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
+        <div onClick={onHome} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} title="Back to search">
+          <LogoMark size={32}/>
+          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        </div>
+        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Find</span>
+      </nav>
+      <div style={{maxWidth:760,margin:"0 auto",padding:"40px 20px 60px"}}>
+        <h1 style={{fontSize:30,fontWeight:900,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
+        <p style={{fontSize:15,color:C.textMid,margin:"0 0 32px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
+        <div style={{display:"flex",flexDirection:"column",gap:18}}>
+          {CATEGORIES.map(cat => (
+            <div key={cat.id} onClick={()=>onOpenCategory(cat)} role="button" tabIndex={0}
+              onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onOpenCategory(cat);}}
+              style={{position:"relative",overflow:"hidden",borderRadius:22,border:`1.5px solid ${C.border}`,background:cat.tint,cursor:"pointer",minHeight:150,display:"flex",alignItems:"center",padding:"28px 30px",transition:"transform .15s, box-shadow .15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 10px 30px rgba(123,51,72,0.10)";}}
+              onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
+            >
+              <div style={{flex:1,zIndex:2}}>
+                <div style={{fontSize:13,fontWeight:700,color:cat.accent,letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}>Category</div>
+                <h2 style={{fontSize:24,fontWeight:900,color:C.textDark,letterSpacing:-0.5,margin:"0 0 6px"}}>{cat.title}</h2>
+                <p style={{fontSize:14,color:C.textMid,margin:"0 0 14px",lineHeight:1.5,maxWidth:420}}>{cat.blurb}</p>
+                <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 18px",borderRadius:99,background:cat.accent,color:"#fff",fontSize:13,fontWeight:700}}>Explore now →</span>
+              </div>
+              <div style={{fontSize:72,opacity:0.9,flexShrink:0,marginLeft:16}}>{cat.emoji}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Find — category detail with ranked products (live-scored)
+function CategoryDetailPage({ category, onBack, onHome, onSelect }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const products = await fetchByCategory(category.name);
+        const scored = products
+          .map(product => ({ product, scored: scoreProduct(product.ingredients) }))
+          .filter(x => x.scored.score !== null)
+          .sort((a, b) => b.scored.score - a.scored.score)
+          .slice(0, 12);
+        if (!cancelled) { setItems(scored); setLoading(false); }
+      } catch {
+        if (!cancelled) { setItems([]); setLoading(false); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [category]);
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
+      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Categories</button>
+        <div onClick={onHome} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} title="Back to search">
+          <LogoMark size={32}/>
+          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        </div>
+        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Find / {category.title}</span>
+      </nav>
+      <div style={{maxWidth:720,margin:"0 auto",padding:"36px 24px 60px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:8}}>
+          <div style={{fontSize:40}}>{category.emoji}</div>
+          <div>
+            <h1 style={{fontSize:26,fontWeight:900,color:C.textDark,letterSpacing:-0.6,margin:0}}>{category.title}</h1>
+            <p style={{fontSize:14,color:C.textMid,margin:"2px 0 0"}}>{category.blurb}</p>
+          </div>
+        </div>
+        <p style={{fontSize:13,color:C.textLight,margin:"12px 0 24px"}}>Highest-scoring {category.title.toLowerCase()} in our database, ranked by allergy-friendly score.</p>
+
+        {loading && (
+          <div style={{textAlign:"center",padding:"40px 0",color:C.textLight}}>
+            <div style={{fontSize:24,marginBottom:8,animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</div>
+            <div style={{fontSize:13}}>Finding the best {category.title.toLowerCase()}…</div>
+          </div>
+        )}
+
+        {!loading && items.length === 0 && (
+          <div style={{padding:"24px",borderRadius:18,background:C.bgCard,border:`1.5px solid ${C.border}`,textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:6}}>🔎</div>
+            <div style={{fontWeight:700,color:C.textDark,marginBottom:3}}>No scoreable products found</div>
+            <div style={{fontSize:13,color:C.textMid}}>We couldn't find products with ingredient data in this category right now. Try the Check tab to score a specific product.</div>
+          </div>
+        )}
+
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {items.map(({ product, scored }, i) => (
+            <RankedProductCard key={product.id || i} product={product} scored={scored} rank={i+1} onSelect={onSelect}/>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [query,setQuery]               = useState("");
   const [results,setResults]           = useState([]);
@@ -388,6 +535,8 @@ export default function App() {
   const [loading,setLoading]           = useState(false);
   const [showGuidelines,setShowGuidelines] = useState(false);
   const [showTop,setShowTop] = useState(false);
+  const [findCategory,setFindCategory] = useState(null);  // selected category object, or null
+  const [showFind,setShowFind] = useState(false);          // Find category landing
   const [error,setError]               = useState(null);
   const inputRef  = useRef(null);
   const debounceRef = useRef(null);
@@ -414,10 +563,12 @@ export default function App() {
 
   const handleSelect = p => { setSelected(p); setQuery(p.name); setShowDrop(false); };
   const handleClose  = () => { setSelected(null); setQuery(""); setResults([]); setTimeout(()=>inputRef.current?.focus(),80); };
-  const goHome = () => { setShowGuidelines(false); setShowTop(false); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
+  const goHome = () => { setShowGuidelines(false); setShowTop(false); setShowFind(false); setFindCategory(null); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
 
   if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)} onHome={goHome}/>;
   if (showTop) return <TopProductsPage onBack={()=>setShowTop(false)} onHome={goHome} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
+  if (findCategory) return <CategoryDetailPage category={findCategory} onBack={()=>setFindCategory(null)} onHome={goHome} onSelect={(p)=>{ setShowFind(false); setFindCategory(null); handleSelect(p); }}/>;
+  if (showFind) return <FindHome onBack={()=>setShowFind(false)} onHome={goHome} onOpenCategory={(cat)=>setFindCategory(cat)}/>;
 
   return (
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FDE8EF 0%,${C.bgPage} 52%,#F2EBF5 100%)`,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
@@ -448,12 +599,24 @@ export default function App() {
       </nav>
 
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:selected?"flex-start":"center",padding:selected?"24px 20px":"0 20px 80px",maxWidth:660,margin:"0 auto",width:"100%",transition:"all .4s cubic-bezier(0.16,1,0.3,1)"}}>
+
+        {!selected && (
+          <div style={{display:"flex",gap:6,padding:5,borderRadius:99,background:"#fff",border:`1.5px solid ${C.border}`,marginBottom:28,boxShadow:"0 2px 10px rgba(123,51,72,0.06)"}}>
+            <div style={{padding:"9px 26px",borderRadius:99,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.primary},#A84E66)`,color:"#fff",boxShadow:`0 2px 8px ${C.primary}33`}}>🔍 Check</div>
+            <button onClick={()=>setShowFind(true)}
+              style={{padding:"9px 26px",borderRadius:99,fontSize:14,fontWeight:700,background:"transparent",color:C.textMid,border:"none",cursor:"pointer",fontFamily:"inherit",transition:"color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.color=C.primary}
+              onMouseLeave={e=>e.currentTarget.style.color=C.textMid}
+            >🧭 Find</button>
+          </div>
+        )}
+
         {!selected && (
           <div style={{textAlign:"center",marginBottom:32,animation:"fadeIn 0.5s ease"}}>
             <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:900,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
-              Find allergy friendly products<br/>
+              Check a product<br/>
               <span style={{background:`linear-gradient(110deg,${C.primary},${C.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-                for your bub's sensitive skin
+                against allergy guidelines
               </span>
             </h1>
           </div>
@@ -516,7 +679,7 @@ export default function App() {
           <div style={{marginTop:14,padding:"24px",borderRadius:18,background:C.bgCard,border:`1.5px solid ${C.border}`,textAlign:"center",width:"100%"}}>
             <div style={{fontSize:28,marginBottom:6}}>🔎</div>
             <div style={{fontWeight:700,color:C.textDark,marginBottom:3}}>No products found</div>
-            <div style={{fontSize:13,color:C.textMid}}>Try a different name or brand — the Open Beauty Facts database has 200,000+ products.</div>
+            <div style={{fontSize:13,color:C.textMid}}>Try a different name or brand. New products are added to our catalogue regularly.</div>
           </div>
         )}
 
@@ -525,7 +688,7 @@ export default function App() {
 
       {!selected && (
         <div style={{textAlign:"center",padding:"10px 20px 22px",fontSize:11,color:C.textLight,lineHeight:1.6}}>
-          Powered by Open Beauty Facts · ASCIA · NAC · A&AA · NACE · FSANZ guidelines<br/>
+          Based on ASCIA · NAC · A&AA · NACE · FSANZ guidelines<br/>
           Prototype v0.2 · Not a substitute for medical advice
         </div>
       )}

@@ -1,0 +1,18 @@
+// ─── Bundled product snapshot (fallback) ──────────────────────────────────────
+// Used if the Notion-backed /api/products endpoint is unavailable or not yet
+// configured. Keep roughly in sync with the Notion catalogue by re-exporting a
+// fresh snapshot periodically. The app prefers live Notion data when available.
+
+export const FALLBACK_PRODUCTS = [
+  { id:"waterwipes", name:"WaterWipes Original Baby Wipes", brand:"WaterWipes", category:"Wipes", ingredients:"Aqua (Water) 99.9%, Citrus Grandis (Grapefruit) Seed Extract", image:null, productUrl:"https://www.waterwipes.com", notes:"" },
+  { id:"huggies-pure", name:"Huggies Pure Baby Wipes", brand:"Huggies", category:"Wipes", ingredients:"Aqua, Phenoxyethanol, Sodium Benzoate, Citric Acid, Sodium Citrate", image:null, productUrl:"https://www.huggies.com.au", notes:"" },
+  { id:"qv-cream", name:"QV Baby Moisturising Cream", brand:"QV", category:"Body Cream & Moisturiser", ingredients:"Aqua, Glycerin, Paraffinum Liquidum, Petrolatum, Cetearyl Alcohol, Dimethicone, Glyceryl Stearate, Squalane, Sodium Lactate", image:null, productUrl:"https://www.qvskincare.com.au", notes:"" },
+  { id:"cetaphil-lotion", name:"Cetaphil Baby Daily Lotion", brand:"Cetaphil", category:"Body Cream & Moisturiser", ingredients:"Aqua, Glycerin, Helianthus Annuus (Sunflower) Seed Oil, Panthenol, Tocopheryl Acetate, Glyceryl Stearate, Parfum", image:null, productUrl:"https://www.cetaphil.com.au", notes:"" },
+  { id:"mustela-balm", name:"Mustela Stelatopia Emollient Balm", brand:"Mustela", category:"Body Cream & Moisturiser", ingredients:"Aqua, Glycerin, Helianthus Annuus Seed Oil, Petrolatum, Glyceryl Stearate, Niacinamide, Tocopherol, Allantoin", image:null, productUrl:"https://www.mustela.com.au", notes:"" },
+  { id:"qv-wash", name:"QV Baby Gentle Wash", brand:"QV", category:"Bath & Wash", ingredients:"Aqua, Glycerin, Cocamidopropyl Betaine, Sodium Laureth Sulfate, PEG-7 Glyceryl Cocoate, Citric Acid", image:null, productUrl:"https://www.qvskincare.com.au", notes:"" },
+  { id:"gaia-shampoo", name:"Gaia Natural Baby Shampoo", brand:"Gaia", category:"Shampoo & Hair", ingredients:"Aqua, Cocamidopropyl Betaine, Decyl Glucoside, Glycerin, Aloe Barbadensis Leaf Juice, Citric Acid, Sodium Benzoate", image:null, productUrl:"https://www.gaiaskinnaturals.com", notes:"" },
+  { id:"sudocrem", name:"Sudocrem Healing Cream", brand:"Sudocrem", category:"Nappy Care", ingredients:"Zinc Oxide, Lanolin, Benzyl Alcohol, Benzyl Benzoate, Benzyl Cinnamate, Liquid Paraffin, Parfum", image:null, productUrl:"https://www.sudocrem.com.au", notes:"" },
+  { id:"bepanthen", name:"Bepanthen Nappy Care Ointment", brand:"Bepanthen", category:"Nappy Care", ingredients:"Panthenol, Petrolatum, Lanolin, Cera Alba, Cetyl Alcohol, Stearyl Alcohol, Glyceryl Oleate, Aqua", image:null, productUrl:"https://www.bepanthen.com.au", notes:"" },
+  { id:"invisible-zinc", name:"Invisible Zinc Baby Sunscreen SPF 50+", brand:"Invisible Zinc", category:"Sun Protection", ingredients:"Zinc Oxide, Aqua, Caprylic/Capric Triglyceride, Glycerin, Cetearyl Alcohol, Tocopherol", image:null, productUrl:"https://www.invisiblezinc.com.au", notes:"" },
+  { id:"bonds-wondersuit", name:"Bonds Baby Wondersuit (100% Cotton)", brand:"Bonds", category:"Clothing", ingredients:"100% Cotton, OEKO-TEX Standard 100 certified, no synthetic dyes", image:null, productUrl:"https://www.bonds.com.au", notes:"" },
+];
