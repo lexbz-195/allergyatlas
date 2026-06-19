@@ -4,11 +4,33 @@ import { scoreProduct } from "./scoring";
 import { GUIDELINES } from "./guidelines";
 import { CATEGORIES } from "./categories";
 
+// ─── Palette ──────────────────────────────────────────────────────────────────
+// Brand colours: #FAA275 (peach), #FFE2FE (pale pink), #A93F55 (deep rose),
+// #EDFF86 (lime), #CDE7B0 (sage). For accessibility, #A93F55 (deep rose) is the
+// primary text/UI colour since it's the only one with sufficient contrast on
+// light backgrounds. Peach is the warm CTA accent (with dark text). Pale pink is
+// the page tint. Sage backs "safe" states, lime is a sparing highlight.
 const C = {
-  bgPage:"#FDF4F7",bgCard:"#FFFBFC",primary:"#7B3348",accent:"#C06B82",accentLt:"#FAEAEE",
-  border:"#EDD5DC",safe:"#3D8F6A",safeBg:"#EAF5EF",caution:"#A96E28",cautionBg:"#FEF5E6",
-  danger:"#A82848",dangerBg:"#FDEDF3",textDark:"#2E1520",textMid:"#7A4A5A",textLight:"#B898A4",
+  bgPage:"#FFF4FD",     // very soft tint of #FFE2FE pale pink
+  bgCard:"#FFFDFE",
+  primary:"#A93F55",    // deep rose — headings, buttons, body (AA contrast on light)
+  primaryDk:"#8E3145",  // darker rose for hover/gradient depth
+  accent:"#FAA275",     // peach — warm CTA accent (use with dark text)
+  accentLt:"#FFE2FE",   // pale pink — tints, chips, hover backgrounds
+  accentLt2:"#FFEFF9",  // even softer pink for large fills
+  border:"#F3D9E6",     // soft rose-pink border
+  textDark:"#3A1622",   // near-black warm
+  textMid:"#7A4453",    // mid rose-brown (AA on white)
+  textLight:"#B07F8E",  // muted rose (AA-large only)
+  safe:"#3D8F6A",       // accessible green for text/score
+  safeBg:"#E6F2D9",     // soft sage tint (from #CDE7B0)
+  caution:"#9A6A1F",    // accessible amber for text
+  cautionBg:"#FBF3DD",  // pale lime-cream tint (nods to #EDFF86)
+  danger:"#A82848",     // accessible red for text/score
+  dangerBg:"#FBE4EC",   // pale rose tint
 };
+
+const FONT = "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 function getScoreInfo(score) {
   if (score >= 75) return { color:C.safe,   bg:C.safeBg,   label:"Allergy Friendly" };
@@ -16,16 +38,69 @@ function getScoreInfo(score) {
   return               { color:C.danger,  bg:C.dangerBg, label:"Not Recommended" };
 }
 
+// Display a clean hostname for a source link (e.g. "gaiaskinnaturals.com")
+function hostnameOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); }
+  catch { return "manufacturer site"; }
+}
+
 function LogoMark({ size=38 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-      <rect width="40" height="40" rx="11" fill="#7B3348"/>
+      <rect width="40" height="40" rx="11" fill="#A93F55"/>
       <path d="M20 6C14 6 10 10 10 15.5C10 22 15 27.5 20 32C25 27.5 30 22 30 15.5C30 10 26 6 20 6Z" fill="white" opacity="0.15"/>
       <line x1="20" y1="28" x2="20" y2="16" stroke="#4CAF72" strokeWidth="2" strokeLinecap="round"/>
       <path d="M20 22C17 20 14 21 14 24C17 24 20 22 20 22Z" fill="#4CAF72"/>
       <path d="M20 19C23 17 26 18 26 21C23 21 20 19 20 19Z" fill="#6FCF97"/>
       <circle cx="20" cy="15.5" r="1.5" fill="#4CAF72"/>
     </svg>
+  );
+}
+
+// Shared top navigation: clickable logo (home) + Check / Find pills + optional crumb.
+// `active` highlights the current section ("check" | "find" | null).
+function NavBar({ onHome, onCheck, onFind, active, crumb, onGuidelines }) {
+  const pill = (label, key, onClick) => {
+    const isActive = active === key;
+    return (
+      <button onClick={onClick}
+        style={{
+          padding:"7px 16px", borderRadius:99, fontSize:13, fontWeight:700,
+          border:"none", cursor:"pointer", fontFamily:"inherit",
+          background: isActive ? `linear-gradient(135deg,${C.primary},${C.primaryDk})` : C.accentLt,
+          color: isActive ? "#fff" : C.primary,
+          boxShadow: isActive ? `0 2px 8px ${C.primary}33` : "none",
+          transition:"all .15s",
+        }}
+        onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.background=C.border; }}
+        onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.background=C.accentLt; }}
+      >{label}</button>
+    );
+  };
+  return (
+    <nav style={{padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,borderBottom:`1px solid ${C.border}`,background:C.bgCard,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+        <div onClick={onHome} role="button" tabIndex={0}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}}
+          style={{display:"flex",alignItems:"center",gap:9,cursor:"pointer",flexShrink:0}} title="Back to home">
+          <LogoMark size={34}/>
+          <span style={{fontSize:16,fontWeight:800,color:C.primary,letterSpacing:-.3}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
+        </div>
+        {crumb && <span style={{fontSize:13,color:C.textLight,whiteSpace:"nowrap"}}>/ {crumb}</span>}
+      </div>
+      <div style={{display:"flex",gap:7,flexShrink:0,alignItems:"center"}}>
+        {pill("🔍 Check", "check", onCheck)}
+        {pill("🧭 Find", "find", onFind)}
+        {onGuidelines && (
+          <button onClick={onGuidelines}
+            style={{padding:"7px 14px",borderRadius:99,fontSize:12,fontWeight:700,background:"transparent",color:C.textMid,border:`1.5px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background=C.accentLt;e.currentTarget.style.color=C.primary;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.textMid;}}
+            title="Australian Guidelines"
+          >🇦🇺 Guidelines</button>
+        )}
+      </div>
+    </nav>
   );
 }
 
@@ -45,7 +120,7 @@ function ScoreBar({ score, animate }) {
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}}>
         <span style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase"}}>Score</span>
-        <span style={{fontSize:32,fontWeight:900,color,lineHeight:1}}>
+        <span style={{fontSize:32,fontWeight:800,color,lineHeight:1}}>
           {score}<span style={{fontSize:14,fontWeight:500,color:C.textLight}}>/100</span>
         </span>
       </div>
@@ -75,7 +150,7 @@ function ProductCard({ product, onClose }) {
   const hasScore = scored.score !== null;
   const { color, bg, label } = hasScore ? getScoreInfo(scored.score) : {color:C.textLight,bg:C.accentLt,label:"No data"};
   return (
-    <div style={{background:C.bgCard,borderRadius:22,border:`1.5px solid ${C.border}`,boxShadow:"0 8px 40px rgba(123,51,72,0.09)",overflow:"hidden",animation:"slideUp 0.35s cubic-bezier(0.16,1,0.3,1)"}}>
+    <div style={{background:C.bgCard,borderRadius:22,border:`1.5px solid ${C.border}`,boxShadow:"0 8px 40px rgba(169,63,85,0.09)",overflow:"hidden",animation:"slideUp 0.35s cubic-bezier(0.16,1,0.3,1)"}}>
       <div style={{padding:"20px 24px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
         <div style={{display:"flex",gap:14,alignItems:"center",minWidth:0}}>
           {product.image
@@ -141,6 +216,14 @@ function ProductCard({ product, onClose }) {
           <div style={{padding:"14px 24px"}}>
             <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Ingredients</div>
             <p style={{margin:0,fontSize:12,color:C.textLight,lineHeight:1.7,maxHeight:100,overflow:"auto"}}>{product.ingredients}</p>
+            {product.productUrl && (
+              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>
+                <span style={{fontSize:11,color:C.textLight}}>Ingredient source: </span>
+                <a href={product.productUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:600,color:C.primary,textDecoration:"none"}}>
+                  {hostnameOf(product.productUrl)} ↗
+                </a>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -179,22 +262,12 @@ function SearchRow({ product, onClick }) {
   );
 }
 
-function GuidelinesPage({ onBack, onHome }) {
+function GuidelinesPage({ onHome, onCheck, onFind }) {
   return (
-    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
-      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
-        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
-        <div onClick={onHome} role="button" tabIndex={0}
-          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}}
-          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
-          title="Back to search">
-          <LogoMark size={32}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
-        </div>
-        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Australian Guidelines</span>
-      </nav>
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active={null} crumb="Australian Guidelines"/>
       <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
-        <h1 style={{fontSize:28,fontWeight:900,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Australian Allergy Guidelines</h1>
+        <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Australian Allergy Guidelines</h1>
         <p style={{fontSize:15,color:C.textMid,margin:"0 0 20px",lineHeight:1.6}}>AllergyAtlas scores are based on the following Australian clinical guidelines and research bodies.</p>
         <div style={{marginBottom:28,padding:"20px 24px",borderRadius:18,background:"#FFF8E1",border:"2px solid #F0C040"}}>
           <div style={{fontSize:14,fontWeight:800,color:"#856404",marginBottom:8}}>🌾 Food Derivatives in Baby Products</div>
@@ -227,7 +300,7 @@ function GuidelinesPage({ onBack, onHome }) {
   );
 }
 
-function TopProductsPage({ onBack, onHome, onSelect }) {
+function TopProductsPage({ onHome, onCheck, onFind, onSelect }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -250,20 +323,10 @@ function TopProductsPage({ onBack, onHome, onSelect }) {
   }, []);
 
   return (
-    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
-      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
-        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
-        <div onClick={onHome} role="button" tabIndex={0}
-          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}}
-          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
-          title="Back to search">
-          <LogoMark size={32}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
-        </div>
-        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Highest Scoring Products</span>
-      </nav>
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active={null} crumb="Highest Scoring Products"/>
       <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
-        <h1 style={{fontSize:28,fontWeight:900,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Highest Scoring Products</h1>
+        <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Highest Scoring Products</h1>
         <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6}}>These products score highest against the AllergyAtlas criteria, drawn from Australian allergy guidelines. Every product here is searchable in the app — each entry shows what earned its score, any detractors, and the sources behind it.</p>
 
         {loading && (
@@ -297,7 +360,7 @@ function TopProductsPage({ onBack, onHome, onSelect }) {
                     <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{product.name}</div>
                   </div>
                   <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{scored.score}</div>
+                    <div style={{fontSize:24,fontWeight:800,color,lineHeight:1}}>{scored.score}</div>
                     <div style={{fontSize:10,fontWeight:600,color}}>{label}</div>
                   </div>
                 </div>
@@ -378,7 +441,7 @@ function RankedProductCard({ product, scored, rank, onSelect }) {
           <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{product.name}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{fontSize:24,fontWeight:900,color,lineHeight:1}}>{scored.score}</div>
+          <div style={{fontSize:24,fontWeight:800,color,lineHeight:1}}>{scored.score}</div>
           <div style={{fontSize:10,fontWeight:600,color}}>{label}</div>
         </div>
       </div>
@@ -420,31 +483,24 @@ function RankedProductCard({ product, scored, rank, onSelect }) {
 }
 
 // Find — category landing (Krumbled-style editorial panels)
-function FindHome({ onBack, onHome, onOpenCategory }) {
+function FindHome({ onHome, onCheck, onFind, onOpenCategory }) {
   return (
-    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
-      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
-        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Back</button>
-        <div onClick={onHome} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} title="Back to search">
-          <LogoMark size={32}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
-        </div>
-        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Find</span>
-      </nav>
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb="Find"/>
       <div style={{maxWidth:760,margin:"0 auto",padding:"40px 20px 60px"}}>
-        <h1 style={{fontSize:30,fontWeight:900,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
+        <h1 style={{fontSize:30,fontWeight:800,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
         <p style={{fontSize:15,color:C.textMid,margin:"0 0 32px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
         <div style={{display:"flex",flexDirection:"column",gap:18}}>
           {CATEGORIES.map(cat => (
             <div key={cat.id} onClick={()=>onOpenCategory(cat)} role="button" tabIndex={0}
               onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onOpenCategory(cat);}}
               style={{position:"relative",overflow:"hidden",borderRadius:22,border:`1.5px solid ${C.border}`,background:cat.tint,cursor:"pointer",minHeight:150,display:"flex",alignItems:"center",padding:"28px 30px",transition:"transform .15s, box-shadow .15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 10px 30px rgba(123,51,72,0.10)";}}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 10px 30px rgba(169,63,85,0.10)";}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
             >
               <div style={{flex:1,zIndex:2}}>
                 <div style={{fontSize:13,fontWeight:700,color:cat.accent,letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}>Category</div>
-                <h2 style={{fontSize:24,fontWeight:900,color:C.textDark,letterSpacing:-0.5,margin:"0 0 6px"}}>{cat.title}</h2>
+                <h2 style={{fontSize:24,fontWeight:800,color:C.textDark,letterSpacing:-0.5,margin:"0 0 6px"}}>{cat.title}</h2>
                 <p style={{fontSize:14,color:C.textMid,margin:"0 0 14px",lineHeight:1.5,maxWidth:420}}>{cat.blurb}</p>
                 <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 18px",borderRadius:99,background:cat.accent,color:"#fff",fontSize:13,fontWeight:700}}>Explore now →</span>
               </div>
@@ -458,7 +514,7 @@ function FindHome({ onBack, onHome, onOpenCategory }) {
 }
 
 // Find — category detail with ranked products (live-scored)
-function CategoryDetailPage({ category, onBack, onHome, onSelect }) {
+function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onSelect }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -482,20 +538,14 @@ function CategoryDetailPage({ category, onBack, onHome, onSelect }) {
   }, [category]);
 
   return (
-    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:"'Inter',-apple-system,sans-serif"}}>
-      <nav style={{padding:"16px 32px",display:"flex",alignItems:"center",gap:14,borderBottom:`1px solid ${C.border}`,background:C.bgCard}}>
-        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit"}}>← Categories</button>
-        <div onClick={onHome} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onHome();}} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} title="Back to search">
-          <LogoMark size={32}/>
-          <span style={{fontSize:16,fontWeight:800,color:C.primary}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
-        </div>
-        <span style={{fontSize:14,color:C.textLight,marginLeft:4}}>/ Find / {category.title}</span>
-      </nav>
-      <div style={{maxWidth:720,margin:"0 auto",padding:"36px 24px 60px"}}>
+    <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb={`Find / ${category.title}`}/>
+      <div style={{maxWidth:720,margin:"0 auto",padding:"24px 24px 60px"}}>
+        <button onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit",marginBottom:20}}>← All categories</button>
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:8}}>
           <div style={{fontSize:40}}>{category.emoji}</div>
           <div>
-            <h1 style={{fontSize:26,fontWeight:900,color:C.textDark,letterSpacing:-0.6,margin:0}}>{category.title}</h1>
+            <h1 style={{fontSize:26,fontWeight:800,color:C.textDark,letterSpacing:-0.6,margin:0}}>{category.title}</h1>
             <p style={{fontSize:14,color:C.textMid,margin:"2px 0 0"}}>{category.blurb}</p>
           </div>
         </div>
@@ -564,16 +614,18 @@ export default function App() {
   const handleSelect = p => { setSelected(p); setQuery(p.name); setShowDrop(false); };
   const handleClose  = () => { setSelected(null); setQuery(""); setResults([]); setTimeout(()=>inputRef.current?.focus(),80); };
   const goHome = () => { setShowGuidelines(false); setShowTop(false); setShowFind(false); setFindCategory(null); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
+  const goCheck = () => { goHome(); };
+  const goFind = () => { setShowGuidelines(false); setShowTop(false); setFindCategory(null); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); setShowFind(true); };
 
-  if (showGuidelines) return <GuidelinesPage onBack={()=>setShowGuidelines(false)} onHome={goHome}/>;
-  if (showTop) return <TopProductsPage onBack={()=>setShowTop(false)} onHome={goHome} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
-  if (findCategory) return <CategoryDetailPage category={findCategory} onBack={()=>setFindCategory(null)} onHome={goHome} onSelect={(p)=>{ setShowFind(false); setFindCategory(null); handleSelect(p); }}/>;
-  if (showFind) return <FindHome onBack={()=>setShowFind(false)} onHome={goHome} onOpenCategory={(cat)=>setFindCategory(cat)}/>;
+  if (showGuidelines) return <GuidelinesPage onHome={goHome} onCheck={goCheck} onFind={goFind}/>;
+  if (showTop) return <TopProductsPage onHome={goHome} onCheck={goCheck} onFind={goFind} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
+  if (findCategory) return <CategoryDetailPage category={findCategory} onBack={()=>setFindCategory(null)} onHome={goHome} onCheck={goCheck} onFind={goFind} onSelect={(p)=>{ setShowFind(false); setFindCategory(null); handleSelect(p); }}/>;
+  if (showFind) return <FindHome onHome={goHome} onCheck={goCheck} onFind={goFind} onOpenCategory={(cat)=>setFindCategory(cat)}/>;
 
   return (
-    <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FDE8EF 0%,${C.bgPage} 52%,#F2EBF5 100%)`,fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FFE2FE 0%,${C.bgPage} 52%,#FFF0FB 100%)`,fontFamily:FONT,display:"flex",flexDirection:"column"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -583,37 +635,13 @@ export default function App() {
         input::placeholder{color:${C.textLight}}
       `}</style>
 
-      <nav style={{padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div onClick={goHome} role="button" tabIndex={0}
-          onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")goHome();}}
-          style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
-          title="Back to search">
-          <LogoMark size={38}/>
-          <span style={{fontSize:17,fontWeight:800,color:C.primary,letterSpacing:-.5}}>Allergy<span style={{color:C.accent}}>Atlas</span></span>
-        </div>
-        <button onClick={()=>setShowGuidelines(true)}
-          style={{padding:"6px 14px",borderRadius:99,fontSize:12,fontWeight:700,background:C.accentLt,color:C.primary,border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
-          onMouseEnter={e=>e.currentTarget.style.background=C.border}
-          onMouseLeave={e=>e.currentTarget.style.background=C.accentLt}
-        >🇦🇺 Australian Guidelines ↗</button>
-      </nav>
+      <NavBar onHome={goHome} onCheck={goCheck} onFind={goFind} active="check" onGuidelines={()=>setShowGuidelines(true)}/>
 
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:selected?"flex-start":"center",padding:selected?"24px 20px":"0 20px 80px",maxWidth:660,margin:"0 auto",width:"100%",transition:"all .4s cubic-bezier(0.16,1,0.3,1)"}}>
 
         {!selected && (
-          <div style={{display:"flex",gap:6,padding:5,borderRadius:99,background:"#fff",border:`1.5px solid ${C.border}`,marginBottom:28,boxShadow:"0 2px 10px rgba(123,51,72,0.06)"}}>
-            <div style={{padding:"9px 26px",borderRadius:99,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.primary},#A84E66)`,color:"#fff",boxShadow:`0 2px 8px ${C.primary}33`}}>🔍 Check</div>
-            <button onClick={()=>setShowFind(true)}
-              style={{padding:"9px 26px",borderRadius:99,fontSize:14,fontWeight:700,background:"transparent",color:C.textMid,border:"none",cursor:"pointer",fontFamily:"inherit",transition:"color .15s"}}
-              onMouseEnter={e=>e.currentTarget.style.color=C.primary}
-              onMouseLeave={e=>e.currentTarget.style.color=C.textMid}
-            >🧭 Find</button>
-          </div>
-        )}
-
-        {!selected && (
           <div style={{textAlign:"center",marginBottom:32,animation:"fadeIn 0.5s ease"}}>
-            <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:900,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
+            <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:800,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
               Check a product<br/>
               <span style={{background:`linear-gradient(110deg,${C.primary},${C.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 against allergy guidelines
@@ -623,7 +651,7 @@ export default function App() {
         )}
 
         <div style={{width:"100%",position:"relative"}}>
-          <div style={{display:"flex",alignItems:"center",background:"#fff",borderRadius:16,border:`1.5px solid ${focused?C.accent:C.border}`,boxShadow:focused?`0 0 0 4px ${C.accentLt},0 8px 28px rgba(123,51,72,0.10)`:"0 4px 20px rgba(123,51,72,0.08)",transition:"box-shadow .2s,border-color .2s"}}>
+          <div style={{display:"flex",alignItems:"center",background:"#fff",borderRadius:16,border:`1.5px solid ${focused?C.accent:C.border}`,boxShadow:focused?`0 0 0 4px ${C.accentLt},0 8px 28px rgba(169,63,85,0.10)`:"0 4px 20px rgba(169,63,85,0.08)",transition:"box-shadow .2s,border-color .2s"}}>
             <span style={{paddingLeft:18,fontSize:17,color:loading?"#ccc":C.accent}}>
               {loading ? <span style={{display:"inline-block",animation:"spin 0.8s linear infinite"}}>⟳</span> : "🔍"}
             </span>
@@ -639,7 +667,7 @@ export default function App() {
           </div>
 
           {showDrop && results.length > 0 && !selected && (
-            <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,right:0,background:C.bgCard,borderRadius:16,border:`1.5px solid ${C.border}`,boxShadow:"0 12px 40px rgba(123,51,72,0.12)",zIndex:100,overflow:"hidden",animation:"slideUp .2s cubic-bezier(0.16,1,0.3,1)",paddingBottom:6,maxHeight:380,overflowY:"auto"}}>
+            <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,right:0,background:C.bgCard,borderRadius:16,border:`1.5px solid ${C.border}`,boxShadow:"0 12px 40px rgba(169,63,85,0.12)",zIndex:100,overflow:"hidden",animation:"slideUp .2s cubic-bezier(0.16,1,0.3,1)",paddingBottom:6,maxHeight:380,overflowY:"auto"}}>
               <div style={{padding:"9px 20px 3px",fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",position:"sticky",top:0,background:C.bgCard}}>
                 {results.length} result{results.length!==1?"s":""} — tap to score
               </div>
@@ -661,14 +689,6 @@ export default function App() {
               ))}
             </div>
           </div>
-        )}
-
-        {!selected && !query && (
-          <button onClick={()=>setShowTop(true)}
-            style={{marginTop:26,display:"inline-flex",alignItems:"center",gap:8,padding:"11px 22px",borderRadius:99,border:"none",background:`linear-gradient(135deg,${C.primary},#A84E66)`,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 14px ${C.primary}44`,transition:"opacity .15s"}}
-            onMouseEnter={e=>e.currentTarget.style.opacity=".9"}
-            onMouseLeave={e=>e.currentTarget.style.opacity="1"}
-          >🏆 Highest scoring products</button>
         )}
 
         {error && !selected && (
