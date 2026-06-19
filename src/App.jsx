@@ -487,24 +487,20 @@ function FindHome({ onHome, onCheck, onFind, onOpenCategory }) {
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
       <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb="Find"/>
-      <div style={{maxWidth:760,margin:"0 auto",padding:"40px 20px 60px"}}>
-        <h1 style={{fontSize:30,fontWeight:800,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
-        <p style={{fontSize:15,color:C.textMid,margin:"0 0 32px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
-        <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      <div style={{maxWidth:760,margin:"0 auto",padding:"36px 20px 60px"}}>
+        <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
+        <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12}}>
           {CATEGORIES.map(cat => (
             <div key={cat.id} onClick={()=>onOpenCategory(cat)} role="button" tabIndex={0}
               onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onOpenCategory(cat);}}
-              style={{position:"relative",overflow:"hidden",borderRadius:22,border:`1.5px solid ${C.border}`,background:cat.tint,cursor:"pointer",minHeight:150,display:"flex",alignItems:"center",padding:"28px 30px",transition:"transform .15s, box-shadow .15s"}}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 10px 30px rgba(169,63,85,0.10)";}}
+              style={{overflow:"hidden",borderRadius:16,border:`1.5px solid ${C.border}`,background:cat.tint,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",padding:"20px 14px",transition:"transform .15s, box-shadow .15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 22px rgba(169,63,85,0.10)";}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
             >
-              <div style={{flex:1,zIndex:2}}>
-                <div style={{fontSize:13,fontWeight:700,color:cat.accent,letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}>Category</div>
-                <h2 style={{fontSize:24,fontWeight:800,color:C.textDark,letterSpacing:-0.5,margin:"0 0 6px"}}>{cat.title}</h2>
-                <p style={{fontSize:14,color:C.textMid,margin:"0 0 14px",lineHeight:1.5,maxWidth:420}}>{cat.blurb}</p>
-                <span style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 18px",borderRadius:99,background:cat.accent,color:"#fff",fontSize:13,fontWeight:700}}>Explore now →</span>
-              </div>
-              <div style={{fontSize:72,opacity:0.9,flexShrink:0,marginLeft:16}}>{cat.emoji}</div>
+              <div style={{fontSize:40,marginBottom:8,lineHeight:1}}>{cat.emoji}</div>
+              <h2 style={{fontSize:15,fontWeight:800,color:C.textDark,letterSpacing:-0.3,margin:"0 0 8px"}}>{cat.title}</h2>
+              <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:99,background:cat.accent,color:"#fff",fontSize:12,fontWeight:700}}>Explore →</span>
             </div>
           ))}
         </div>

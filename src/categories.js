@@ -9,5 +9,4 @@ export const CATEGORIES = [
   { id:"bathwash",   name:"Bath & Wash",               title:"Bath & Wash",               blurb:"Soap-free cleansers that won't strip the skin barrier",           emoji:"🛁", accent:"#E2A06A", tint:"#FBF0E6" },
   { id:"nappy",      name:"Nappy Care",                title:"Nappy Care",                blurb:"Zinc-based barrier creams for nappy area protection",             emoji:"🍼", accent:"#D98BA0", tint:"#FAECF0" },
   { id:"sunscreen",  name:"Sun Protection",            title:"Sun Protection",            blurb:"Mineral sunscreens formulated for baby skin",                     emoji:"☀️", accent:"#E8C15A", tint:"#FCF6E4" },
-  { id:"clothing",   name:"Clothing",                  title:"Clothing",                  blurb:"Natural-fibre basics free from irritating dyes",                  emoji:"👕", accent:"#9B8FC9", tint:"#F0EDF8" },
 ];
