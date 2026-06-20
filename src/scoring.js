@@ -18,6 +18,19 @@ export const FOOD_DERIVATIVES = [
   { match: /persea\s*gratissima|avocado\s*oil/i,                  name: "Avocado oil",                 penalty: 6  },
   { match: /theobroma\s*cacao|cocoa\s*(seed\s*)?butter/i,         name: "Cocoa seed butter",           penalty: 6  },
   { match: /rosa\s*canina|rosehip\s*(seed\s*)?(oil|extract)/i,    name: "Rosehip seed extract",        penalty: 5  },
+  // Whole / cold-pressed food oils — flagged because unrefined cosmetic oils retain
+  // allergenic proteins (refined derivatives like squalane/unsaponifiables are NOT flagged).
+  { match: /olea\s*europaea\s*(\([^)]*\)\s*)?fruit\s*oil|\bolive\s*(fruit\s*)?oil\b/i, name: "Olive oil", penalty: 6 },
+  { match: /zea\s*mays.*oil|\bcorn\s*oil\b|maize\s*oil/i,         name: "Corn oil",                    penalty: 8  },
+  { match: /simmondsia\s*chinensis|jojoba\s*(seed\s*)?oil/i,      name: "Jojoba seed oil",             penalty: 5  },
+  { match: /oenothera\s*biennis|evening\s*primrose\s*oil/i,       name: "Evening primrose oil",        penalty: 5  },
+  { match: /oryza\s*sativa.*bran|rice\s*bran/i,                   name: "Rice bran",                   penalty: 6  },
+  { match: /moringa\s*oleifera|moringa.{0,12}seed\s*oil/i,        name: "Moringa seed oil",            penalty: 5  },
+  { match: /camellia\s*oleifera|camellia.{0,12}seed\s*oil/i,      name: "Camellia seed oil",           penalty: 5  },
+  { match: /ribes\s*nigrum|blackcurrant\s*(seed\s*)?oil/i,        name: "Blackcurrant seed oil",       penalty: 5  },
+  { match: /\bmel\b|\bhoney\b/i,                                  name: "Honey",                       penalty: 6  },
+  { match: /caprae\s*lac|goat'?s?\s*milk/i,                       name: "Goat milk",                   penalty: 18 },
+  { match: /pyrus\s*communis|\bpear\s*(fruit\s*)?(juice|extract)/i, name: "Pear extract",              penalty: 5  },
 ];
 
 // Sensitisers — each carries a plain-English reason and a cited source
