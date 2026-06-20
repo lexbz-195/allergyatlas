@@ -15,6 +15,9 @@ export const FOOD_DERIVATIVES = [
   { match: /macadamia\s*(oil|ternifolia)/i,                       name: "Macadamia nut oil",           penalty: 15 },
   { match: /shea\s*butter|butyrospermum\s*parkii/i,               name: "Shea butter",                 penalty: 6  },
   { match: /citrus\s*(aurantium|limon|sinensis)|lemon\s*extract/i,name: "Citrus extract",              penalty: 8  },
+  { match: /persea\s*gratissima|avocado\s*oil/i,                  name: "Avocado oil",                 penalty: 6  },
+  { match: /theobroma\s*cacao|cocoa\s*(seed\s*)?butter/i,         name: "Cocoa seed butter",           penalty: 6  },
+  { match: /rosa\s*canina|rosehip\s*(seed\s*)?(oil|extract)/i,    name: "Rosehip seed extract",        penalty: 5  },
 ];
 
 // Sensitisers — each carries a plain-English reason and a cited source
@@ -130,6 +133,55 @@ export const SENSITISERS = [
     reason: "PEG compounds can enhance skin penetration of other ingredients and may irritate compromised skin barriers in eczema-prone infants.",
     source: "Australasian College of Dermatologists — contact allergens",
     sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /\blimonene\b/i,
+    name: "Limonene (fragrance allergen)", penalty: 6,
+    reason: "Limonene is one of the EU-declarable fragrance allergens. As it oxidises it can become a contact sensitiser, particularly on sensitive infant skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /\blinalool\b/i,
+    name: "Linalool (fragrance allergen)", penalty: 6,
+    reason: "Linalool is an EU-declarable fragrance allergen found in many essential oils. Its oxidation products are a recognised cause of allergic contact dermatitis.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /\bgeraniol\b/i,
+    name: "Geraniol (fragrance allergen)", penalty: 6,
+    reason: "Geraniol is an EU-declarable fragrance allergen and a known contact sensitiser, best avoided on delicate infant skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /benzyl\s*benzoate/i,
+    name: "Benzyl benzoate (fragrance allergen)", penalty: 6,
+    reason: "Benzyl benzoate is an EU-declarable fragrance allergen that can act as a skin irritant and contact sensitiser.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /benzyl\s*salicylate/i,
+    name: "Benzyl salicylate (fragrance allergen)", penalty: 6,
+    reason: "Benzyl salicylate is an EU-declarable fragrance allergen and recognised contact sensitiser.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /citronellol|\beugenol\b|\bcoumarin\b|\bfarnesol\b|hexyl\s*cinnamal|amyl\s*cinnamal|cinnamyl\s*alcohol|cinnamal\b/i,
+    name: "Fragrance allergen (declarable)", penalty: 6,
+    reason: "This is one of the EU-declarable fragrance allergens, recognised contact sensitisers that are best avoided on eczema-prone or very young skin.",
+    source: "Australasian College of Dermatologists — contact allergens",
+    sourceUrl: "https://www.dermcoll.edu.au",
+  },
+  {
+    match: /lavandula|lavender\s*oil|\bessential\s*oil\b/i,
+    name: "Lavender / essential oil", penalty: 8,
+    reason: "Essential oils such as lavender are natural fragrance sources containing multiple allergenic compounds (linalool, geraniol). ASCIA advises fragrance-free products, including natural fragrances, for sensitive infant skin.",
+    source: "ASCIA — Eczema (Atopic Dermatitis) guidance",
+    sourceUrl: "https://www.allergy.org.au/patients/skin-allergy/eczema",
   },
 ];
 
