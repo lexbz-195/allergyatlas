@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { searchProducts, fetchByCategory, fetchAllProducts } from "./api";
 import { scoreProduct } from "./scoring";
 import { GUIDELINES } from "./guidelines";
-import { CATEGORIES } from "./categories";
+import { CATEGORIES, categoryMeta } from "./categories";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 // Brand colours: #FAA275 (peach), #FFE2FE (pale pink), #A93F55 (deep rose),
@@ -250,7 +250,7 @@ function ProductCard({ product, onClose, onCheckAnother }) {
         <div style={{display:"flex",gap:14,alignItems:"center",minWidth:0}}>
           {product.image
             ? <img src={product.image} alt={product.name} style={{width:52,height:52,borderRadius:14,objectFit:"cover",flexShrink:0,background:C.accentLt}} onError={e=>e.target.style.display="none"}/>
-            : <div style={{width:52,height:52,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🧴</div>}
+            : (()=>{ const m=categoryMeta(product.category); return <div style={{width:52,height:52,borderRadius:14,background:m.tint,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CategoryIcon icon={m.icon} color={m.accent} size={32}/></div>; })()}
           <div style={{minWidth:0}}>
             <div style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase",marginBottom:2}}>{product.brand} · {product.category}</div>
             <div style={{fontSize:15,fontWeight:700,color:C.textDark,lineHeight:1.3}}>{product.name}</div>
@@ -356,7 +356,7 @@ function SearchRow({ product, onClick }) {
       style={{display:"flex",alignItems:"center",gap:12,padding:"9px 14px",borderRadius:10,cursor:"pointer",background:hov?C.accentLt:"transparent",transition:"background .12s",margin:"0 6px"}}>
       {product.image
         ? <img src={product.image} alt={product.name} style={{width:36,height:36,borderRadius:10,objectFit:"cover",flexShrink:0,background:C.accentLt}} onError={e=>e.target.style.display="none"}/>
-        : <div style={{width:36,height:36,borderRadius:10,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>🧴</div>}
+        : (()=>{ const m=categoryMeta(product.category); return <div style={{width:36,height:36,borderRadius:10,background:m.tint,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><CategoryIcon icon={m.icon} color={m.accent} size={22}/></div>; })()}
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:13,fontWeight:600,color:C.textDark,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{product.name}</div>
         <div style={{fontSize:11,color:C.textLight}}>{product.brand} · {product.category}</div>
@@ -459,7 +459,7 @@ function TopProductsPage({ onHome, onCheck, onFind, onGuidelines, onSelect }) {
                   <div style={{position:"relative",flexShrink:0}}>
                     {product.image
                       ? <img src={product.image} alt={product.name} style={{width:48,height:48,borderRadius:14,objectFit:"cover",background:bg}} onError={e=>e.target.style.display="none"}/>
-                      : <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧴</div>}
+                      : (()=>{ const m=categoryMeta(product.category); return <div style={{width:48,height:48,borderRadius:14,background:m.tint,display:"flex",alignItems:"center",justifyContent:"center"}}><CategoryIcon icon={m.icon} color={m.accent} size={30}/></div>; })()}
                     <div style={{position:"absolute",top:-8,left:-8,width:22,height:22,borderRadius:99,background:C.primary,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
                   </div>
                   <div style={{flex:1,minWidth:0}}>
@@ -540,7 +540,7 @@ function RankedProductCard({ product, scored, rank, onSelect }) {
         <div style={{position:"relative",flexShrink:0}}>
           {product.image
             ? <img src={product.image} alt={product.name} style={{width:48,height:48,borderRadius:14,objectFit:"cover",background:bg}} onError={e=>e.target.style.display="none"}/>
-            : <div style={{width:48,height:48,borderRadius:14,background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧴</div>}
+            : (()=>{ const m=categoryMeta(product.category); return <div style={{width:48,height:48,borderRadius:14,background:m.tint,display:"flex",alignItems:"center",justifyContent:"center"}}><CategoryIcon icon={m.icon} color={m.accent} size={30}/></div>; })()}
           {rank != null && <div style={{position:"absolute",top:-8,left:-8,width:22,height:22,borderRadius:99,background:C.primary,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{rank}</div>}
         </div>
         <div style={{flex:1,minWidth:0}}>

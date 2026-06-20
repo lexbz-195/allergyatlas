@@ -12,3 +12,25 @@ export const CATEGORIES = [
   { id:"nappy",      name:"Nappy Care",                title:"Nappy Care",                blurb:"Zinc-based barrier creams for nappy area protection",             icon:"nappy",     accent:"#C8607C", tint:"#FFE2FE" },
   { id:"sunscreen",  name:"Sun Protection",            title:"Sun Protection",            blurb:"Mineral sunscreens formulated for baby skin",                     icon:"sun",       accent:"#C99A1E", tint:"#F7F8D6" },
 ];
+
+// Resolve a product's category (which may be the full Notion category name,
+// e.g. "Shampoo & Hair", or a category id) to its icon key, accent and tint.
+// Falls back to a sensible default if nothing matches.
+export function categoryMeta(categoryValue) {
+  if (!categoryValue) return { icon:"cream", accent:"#A93F55", tint:"#FFE2FE" };
+  const v = String(categoryValue).trim().toLowerCase();
+  const match = CATEGORIES.find(c =>
+    c.name.toLowerCase() === v ||
+    c.id.toLowerCase() === v ||
+    c.title.toLowerCase() === v
+  );
+  if (match) return { icon:match.icon, accent:match.accent, tint:match.tint };
+  // Loose keyword fallback for slight naming differences
+  if (v.includes("wipe"))                         return { icon:"wipes",   accent:"#A93F55", tint:"#FFE2FE" };
+  if (v.includes("shampoo") || v.includes("hair"))return { icon:"shampoo", accent:"#C8607C", tint:"#FFEAF7" };
+  if (v.includes("nappy"))                        return { icon:"nappy",   accent:"#C8607C", tint:"#FFE2FE" };
+  if (v.includes("sun"))                          return { icon:"sun",     accent:"#C99A1E", tint:"#F7F8D6" };
+  if (v.includes("bath") || v.includes("wash"))   return { icon:"bath",    accent:"#E08A4F", tint:"#FFE7D4" };
+  if (v.includes("cream")||v.includes("moistur")||v.includes("lotion")) return { icon:"cream", accent:"#6FA368", tint:"#E6F2D9" };
+  return { icon:"cream", accent:"#A93F55", tint:"#FFE2FE" };
+}
