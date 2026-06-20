@@ -66,11 +66,14 @@ function CategoryIcon({ icon, color = "#A93F55", size = 40 }) {
     xmlns: "http://www.w3.org/2000/svg" };
   const sw = 2.4;
   switch (icon) {
-    case "wipes": // droplet
+    case "wipes": // packet of wipes with a sheet pulled out
       return (
         <svg {...common}>
-          <path d="M24 7C24 7 13 19 13 28a11 11 0 0 0 22 0C35 19 24 7 24 7Z" fill={soft} stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/>
-          <path d="M19 29a5 5 0 0 0 4 4.5" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <rect x="11" y="17" width="26" height="22" rx="4" fill={soft} stroke={stroke} strokeWidth={sw}/>
+          <rect x="19" y="20" width="10" height="3.5" rx="1.75" fill={stroke}/>
+          <path d="M20 17c0-3 1.5-6 4-6s4 3 4 6" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <path d="M20 12.5h8l-1.2-2.2a2 2 0 0 0-1.7-1h-2.2a2 2 0 0 0-1.7 1Z" fill={stroke}/>
+          <line x1="16" y1="30" x2="22" y2="30" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
         </svg>
       );
     case "shampoo": // bottle
@@ -130,6 +133,27 @@ function CategoryIcon({ icon, color = "#A93F55", size = 40 }) {
       );
   }
 }
+
+// Warning banner shown on the Sun Protection category page and on all
+// sun-protection product detail cards.
+function SunscreenWarning({ compact = false }) {
+  return (
+    <div style={{display:"flex",alignItems:"flex-start",gap:10,padding:compact?"10px 14px":"13px 16px",borderRadius:12,background:"#FFF4E0",border:"1.5px solid #E8B84B",margin:compact?"0 0 0":"0 0 22px"}}>
+      <span style={{fontSize:16,lineHeight:1.3,flexShrink:0}}>⚠️</span>
+      <span style={{fontSize:compact?12:13,fontWeight:600,color:"#7A5210",lineHeight:1.45}}>
+        Sunscreen use is not recommended for infants under the age of 6 months.
+      </span>
+    </div>
+  );
+}
+
+// True for the Sun Protection category (matched by id or name).
+function isSunCategory(cat) {
+  if (!cat) return false;
+  const v = `${cat.id||""} ${cat.name||""} ${cat.category||""}`.toLowerCase();
+  return v.includes("sun");
+}
+
 function NavBar({ onHome, onCheck, onFind, active, crumb, onGuidelines }) {
   const pill = (label, key, onClick) => {
     const isActive = active === key;
@@ -216,7 +240,7 @@ function BreakdownRow({ item }) {
   );
 }
 
-function ProductCard({ product, onClose }) {
+function ProductCard({ product, onClose, onCheckAnother }) {
   const scored = scoreProduct(product.ingredients);
   const hasScore = scored.score !== null;
   const { color, bg, label } = hasScore ? getScoreInfo(scored.score) : {color:C.textLight,bg:C.accentLt,label:"No data"};
@@ -235,6 +259,10 @@ function ProductCard({ product, onClose }) {
         </div>
         <button onClick={onClose} style={{width:28,height:28,borderRadius:99,border:"none",background:C.accentLt,cursor:"pointer",fontSize:16,color:C.accent,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
       </div>
+
+      {isSunCategory({category: product.category}) && (
+        <div style={{padding:"14px 24px 0"}}><SunscreenWarning compact/></div>
+      )}
 
       {hasScore ? (
         <>
@@ -306,6 +334,14 @@ function ProductCard({ product, onClose }) {
           </div>
         </div>
       )}
+
+      <div style={{padding:"14px 24px 20px",borderTop:`1px solid ${C.border}`}}>
+        <button onClick={onCheckAnother || onClose}
+          style={{width:"100%",padding:"13px 20px",borderRadius:99,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,color:"#fff",background:`linear-gradient(135deg,${C.primary},${C.primaryDk})`,boxShadow:`0 4px 14px ${C.primary}2E`,display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"transform .12s, box-shadow .12s"}}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow=`0 6px 18px ${C.primary}40`;}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow=`0 4px 14px ${C.primary}2E`;}}
+        >🔍 Check another product</button>
+      </div>
     </div>
   );
 }
@@ -558,10 +594,26 @@ function FindHome({ onHome, onCheck, onFind, onGuidelines, onOpenCategory }) {
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
       <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb="Find" onGuidelines={onGuidelines}/>
-      <div style={{maxWidth:760,margin:"0 auto",padding:"36px 20px 60px"}}>
-        <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
-        <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12}}>
+      <div style={{maxWidth:760,margin:"0 auto",padding:"36px 20px 60px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <div style={{textAlign:"center",marginBottom:24,animation:"fadeIn 0.5s ease"}}>
+          <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:800,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
+            Find baby products<br/>
+            <span style={{background:`linear-gradient(110deg,${C.primary},${C.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+              by category
+            </span>
+          </h1>
+        </div>
+
+        <div style={{display:"flex",gap:6,padding:5,borderRadius:99,background:"#fff",border:`1.5px solid ${C.border}`,marginBottom:28,boxShadow:"0 2px 10px rgba(169,63,85,0.06)"}}>
+          <button onClick={onCheck}
+            style={{padding:"9px 28px",borderRadius:99,fontSize:14,fontWeight:700,background:"transparent",color:C.textMid,border:"none",cursor:"pointer",fontFamily:"inherit",transition:"color .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.color=C.primary}
+            onMouseLeave={e=>e.currentTarget.style.color=C.textMid}
+          >🔍 Check</button>
+          <div style={{padding:"9px 28px",borderRadius:99,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.primary},${C.primaryDk})`,color:"#fff",boxShadow:`0 2px 8px ${C.primary}33`}}>🧭 Find</div>
+        </div>
+
+        <div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12}}>
           {CATEGORIES.map(cat => (
             <div key={cat.id} onClick={()=>onOpenCategory(cat)} role="button" tabIndex={0}
               onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")onOpenCategory(cat);}}
@@ -617,6 +669,8 @@ function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onGuide
           </div>
         </div>
         <p style={{fontSize:13,color:C.textLight,margin:"12px 0 24px"}}>Highest-scoring {category.title.toLowerCase()} in our database, ranked by allergy-friendly score.</p>
+
+        {isSunCategory(category) && <SunscreenWarning/>}
 
         {loading && (
           <div>
@@ -725,7 +779,7 @@ export default function App() {
         {!selected && (
           <div style={{textAlign:"center",marginBottom:24,animation:"fadeIn 0.5s ease"}}>
             <h1 style={{fontSize:"clamp(20px,4vw,38px)",fontWeight:800,color:C.textDark,letterSpacing:-1,lineHeight:1.2,margin:0}}>
-              Check a product<br/>
+              Check a baby product<br/>
               <span style={{background:`linear-gradient(110deg,${C.primary},${C.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 against allergy guidelines
               </span>
@@ -774,7 +828,7 @@ export default function App() {
           <div style={{marginTop:18,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
             <span style={{fontSize:11,fontWeight:700,color:C.textLight,letterSpacing:.8,textTransform:"uppercase"}}>Popular brands</span>
             <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"center"}}>
-              {["QV","Cetaphil","Bunjie","Mustela"].map(s => (
+              {["QV","Cetaphil","Bunjie","Gaia"].map(s => (
                 <button key={s} onClick={()=>{setQuery(s);inputRef.current?.focus();}}
                   style={{padding:"6px 16px",borderRadius:99,fontSize:13,fontWeight:600,background:"#fff",color:C.primary,border:`1.5px solid ${C.border}`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
                   onMouseEnter={e=>{e.currentTarget.style.background=C.accentLt;e.currentTarget.style.borderColor=C.accent;}}
@@ -797,7 +851,7 @@ export default function App() {
           </div>
         )}
 
-        {selected && <div style={{width:"100%",marginTop:18}}><ProductCard product={selected} onClose={handleClose}/></div>}
+        {selected && <div style={{width:"100%",marginTop:18}}><ProductCard product={selected} onClose={handleClose} onCheckAnother={goHome}/></div>}
       </div>
 
       {!selected && (
