@@ -57,8 +57,79 @@ function LogoMark({ size=38 }) {
   );
 }
 
-// Shared top navigation: clickable logo (home) + Check / Find pills + optional crumb.
-// `active` highlights the current section ("check" | "find" | null).
+// Custom category icons (brand-coloured SVGs, sized to sit where the emoji was).
+// `color` is the category accent; a soft fill is derived for depth.
+function CategoryIcon({ icon, color = "#A93F55", size = 40 }) {
+  const stroke = color;
+  const soft = color + "33"; // ~20% alpha fill
+  const common = { width: size, height: size, viewBox: "0 0 48 48", fill: "none",
+    xmlns: "http://www.w3.org/2000/svg" };
+  const sw = 2.4;
+  switch (icon) {
+    case "wipes": // droplet
+      return (
+        <svg {...common}>
+          <path d="M24 7C24 7 13 19 13 28a11 11 0 0 0 22 0C35 19 24 7 24 7Z" fill={soft} stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/>
+          <path d="M19 29a5 5 0 0 0 4 4.5" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      );
+    case "shampoo": // bottle
+      return (
+        <svg {...common}>
+          <rect x="17" y="18" width="14" height="22" rx="4" fill={soft} stroke={stroke} strokeWidth={sw}/>
+          <path d="M21 18v-3a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v3" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <rect x="21" y="8" width="6" height="4" rx="1.5" fill={stroke}/>
+          <line x1="17" y1="27" x2="31" y2="27" stroke={stroke} strokeWidth={sw}/>
+        </svg>
+      );
+    case "cream": // jar of cream
+      return (
+        <svg {...common}>
+          <rect x="13" y="20" width="22" height="18" rx="5" fill={soft} stroke={stroke} strokeWidth={sw}/>
+          <rect x="16" y="12" width="16" height="8" rx="3" fill={stroke}/>
+          <ellipse cx="24" cy="27" rx="6" ry="2.5" stroke={stroke} strokeWidth={sw} fill="none"/>
+        </svg>
+      );
+    case "bath": // bathtub
+      return (
+        <svg {...common}>
+          <path d="M9 26h30v4a7 7 0 0 1-7 7H16a7 7 0 0 1-7-7v-4Z" fill={soft} stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/>
+          <path d="M13 26v-9a4 4 0 0 1 4-4 4 4 0 0 1 4 4" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <circle cx="17" cy="17" r="1.6" fill={stroke}/>
+          <line x1="14" y1="37" x2="13" y2="40" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="34" y1="37" x2="35" y2="40" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      );
+    case "nappy": // baby bottle
+      return (
+        <svg {...common}>
+          <path d="M17 19h14v16a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5V19Z" fill={soft} stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/>
+          <rect x="19" y="13" width="10" height="6" rx="2" fill={stroke}/>
+          <path d="M22 9.5l2 2 2-2" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"/>
+          <line x1="17" y1="27" x2="24" y2="27" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+          <line x1="17" y1="32" x2="22" y2="32" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>
+        </svg>
+      );
+    case "sun": // sun
+      return (
+        <svg {...common}>
+          <circle cx="24" cy="24" r="8" fill={soft} stroke={stroke} strokeWidth={sw}/>
+          {Array.from({ length: 8 }).map((_, i) => {
+            const a = (i * Math.PI) / 4;
+            const x1 = 24 + Math.cos(a) * 13, y1 = 24 + Math.sin(a) * 13;
+            const x2 = 24 + Math.cos(a) * 17, y2 = 24 + Math.sin(a) * 17;
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth={sw} strokeLinecap="round"/>;
+          })}
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <circle cx="24" cy="24" r="14" fill={soft} stroke={stroke} strokeWidth={sw}/>
+        </svg>
+      );
+  }
+}
 function NavBar({ onHome, onCheck, onFind, active, crumb, onGuidelines }) {
   const pill = (label, key, onClick) => {
     const isActive = active === key;
@@ -300,7 +371,7 @@ function GuidelinesPage({ onHome, onCheck, onFind }) {
   );
 }
 
-function TopProductsPage({ onHome, onCheck, onFind, onSelect }) {
+function TopProductsPage({ onHome, onCheck, onFind, onGuidelines, onSelect }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -324,7 +395,7 @@ function TopProductsPage({ onHome, onCheck, onFind, onSelect }) {
 
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
-      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active={null} crumb="Highest Scoring Products"/>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active={null} crumb="Highest Scoring Products" onGuidelines={onGuidelines}/>
       <div style={{maxWidth:720,margin:"0 auto",padding:"40px 24px 60px"}}>
         <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-0.8,margin:"0 0 6px"}}>Highest Scoring Products</h1>
         <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6}}>These products score highest against the AllergyAtlas criteria, drawn from Australian allergy guidelines. Every product here is searchable in the app — each entry shows what earned its score, any detractors, and the sources behind it.</p>
@@ -483,10 +554,10 @@ function RankedProductCard({ product, scored, rank, onSelect }) {
 }
 
 // Find — category landing (Krumbled-style editorial panels)
-function FindHome({ onHome, onCheck, onFind, onOpenCategory }) {
+function FindHome({ onHome, onCheck, onFind, onGuidelines, onOpenCategory }) {
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
-      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb="Find"/>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb="Find" onGuidelines={onGuidelines}/>
       <div style={{maxWidth:760,margin:"0 auto",padding:"36px 20px 60px"}}>
         <h1 style={{fontSize:28,fontWeight:800,color:C.textDark,letterSpacing:-1,margin:"0 0 6px",textAlign:"center"}}>Find allergy friendly products</h1>
         <p style={{fontSize:15,color:C.textMid,margin:"0 0 28px",lineHeight:1.6,textAlign:"center"}}>Browse a category to see the highest-scoring products, judged against Australian allergy guidelines.</p>
@@ -498,7 +569,7 @@ function FindHome({ onHome, onCheck, onFind, onOpenCategory }) {
               onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 22px rgba(169,63,85,0.10)";}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
             >
-              <div style={{fontSize:40,marginBottom:8,lineHeight:1}}>{cat.emoji}</div>
+              <div style={{marginBottom:8,lineHeight:1}}><CategoryIcon icon={cat.icon} color={cat.accent} size={40}/></div>
               <h2 style={{fontSize:15,fontWeight:800,color:C.textDark,letterSpacing:-0.3,margin:"0 0 8px"}}>{cat.title}</h2>
               <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:99,background:cat.accent,color:"#fff",fontSize:12,fontWeight:700}}>Explore →</span>
             </div>
@@ -510,7 +581,7 @@ function FindHome({ onHome, onCheck, onFind, onOpenCategory }) {
 }
 
 // Find — category detail with ranked products (live-scored)
-function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onSelect }) {
+function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onGuidelines, onSelect }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -535,11 +606,11 @@ function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onSelec
 
   return (
     <div style={{minHeight:"100vh",background:C.bgPage,fontFamily:FONT}}>
-      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb={`Find / ${category.title}`}/>
+      <NavBar onHome={onHome} onCheck={onCheck} onFind={onFind} active="find" crumb={`Find / ${category.title}`} onGuidelines={onGuidelines}/>
       <div style={{maxWidth:720,margin:"0 auto",padding:"24px 24px 60px"}}>
         <button onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:99,border:`1.5px solid ${C.border}`,background:"white",cursor:"pointer",fontSize:13,fontWeight:600,color:C.textMid,fontFamily:"inherit",marginBottom:20}}>← All categories</button>
         <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:8}}>
-          <div style={{fontSize:40}}>{category.emoji}</div>
+          <div style={{flexShrink:0}}><CategoryIcon icon={category.icon} color={category.accent} size={40}/></div>
           <div>
             <h1 style={{fontSize:26,fontWeight:800,color:C.textDark,letterSpacing:-0.6,margin:0}}>{category.title}</h1>
             <p style={{fontSize:14,color:C.textMid,margin:"2px 0 0"}}>{category.blurb}</p>
@@ -548,9 +619,23 @@ function CategoryDetailPage({ category, onBack, onHome, onCheck, onFind, onSelec
         <p style={{fontSize:13,color:C.textLight,margin:"12px 0 24px"}}>Highest-scoring {category.title.toLowerCase()} in our database, ranked by allergy-friendly score.</p>
 
         {loading && (
-          <div style={{textAlign:"center",padding:"40px 0",color:C.textLight}}>
-            <div style={{fontSize:24,marginBottom:8,animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</div>
-            <div style={{fontSize:13}}>Finding the best {category.title.toLowerCase()}…</div>
+          <div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"6px 0 22px",color:category.accent}}>
+              <span style={{width:18,height:18,borderRadius:"50%",border:`2.5px solid ${category.accent}33`,borderTopColor:category.accent,display:"inline-block",animation:"spin 0.7s linear infinite"}}/>
+              <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Finding the best {category.title.toLowerCase()}…</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:16}}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{background:C.bgCard,borderRadius:18,border:`1.5px solid ${C.border}`,padding:"18px 20px",display:"flex",alignItems:"center",gap:14,opacity:1 - i*0.22}}>
+                  <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(90deg,${C.border}55,${category.tint},${C.border}55)`,backgroundSize:"200% 100%",animation:"shimmer 1.3s ease-in-out infinite",flexShrink:0}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{height:9,width:"40%",borderRadius:6,marginBottom:9,background:`linear-gradient(90deg,${C.border}55,${category.tint},${C.border}55)`,backgroundSize:"200% 100%",animation:"shimmer 1.3s ease-in-out infinite"}}/>
+                    <div style={{height:13,width:"72%",borderRadius:6,background:`linear-gradient(90deg,${C.border}55,${category.tint},${C.border}55)`,backgroundSize:"200% 100%",animation:"shimmer 1.3s ease-in-out infinite"}}/>
+                  </div>
+                  <div style={{width:34,height:30,borderRadius:8,background:`linear-gradient(90deg,${C.border}55,${category.tint},${C.border}55)`,backgroundSize:"200% 100%",animation:"shimmer 1.3s ease-in-out infinite",flexShrink:0}}/>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -612,11 +697,12 @@ export default function App() {
   const goHome = () => { setShowGuidelines(false); setShowTop(false); setShowFind(false); setFindCategory(null); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); };
   const goCheck = () => { goHome(); };
   const goFind = () => { setShowGuidelines(false); setShowTop(false); setFindCategory(null); setSelected(null); setQuery(""); setResults([]); setShowDrop(false); setShowFind(true); };
+  const goGuidelines = () => { setShowTop(false); setShowFind(false); setFindCategory(null); setSelected(null); setShowDrop(false); setShowGuidelines(true); };
 
   if (showGuidelines) return <GuidelinesPage onHome={goHome} onCheck={goCheck} onFind={goFind}/>;
-  if (showTop) return <TopProductsPage onHome={goHome} onCheck={goCheck} onFind={goFind} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
-  if (findCategory) return <CategoryDetailPage category={findCategory} onBack={()=>setFindCategory(null)} onHome={goHome} onCheck={goCheck} onFind={goFind} onSelect={(p)=>{ setShowFind(false); setFindCategory(null); handleSelect(p); }}/>;
-  if (showFind) return <FindHome onHome={goHome} onCheck={goCheck} onFind={goFind} onOpenCategory={(cat)=>setFindCategory(cat)}/>;
+  if (showTop) return <TopProductsPage onHome={goHome} onCheck={goCheck} onFind={goFind} onGuidelines={goGuidelines} onSelect={(p)=>{ setShowTop(false); handleSelect(p); }}/>;
+  if (findCategory) return <CategoryDetailPage category={findCategory} onBack={()=>setFindCategory(null)} onHome={goHome} onCheck={goCheck} onFind={goFind} onGuidelines={goGuidelines} onSelect={(p)=>{ setShowFind(false); setFindCategory(null); handleSelect(p); }}/>;
+  if (showFind) return <FindHome onHome={goHome} onCheck={goCheck} onFind={goFind} onGuidelines={goGuidelines} onOpenCategory={(cat)=>setFindCategory(cat)}/>;
 
   return (
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse 90% 50% at 50% 0%,#FFE2FE 0%,${C.bgPage} 52%,#FFF0FB 100%)`,fontFamily:FONT,display:"flex",flexDirection:"column"}}>
@@ -625,6 +711,7 @@ export default function App() {
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         *{box-sizing:border-box}
         ::-webkit-scrollbar{width:4px}
         ::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
