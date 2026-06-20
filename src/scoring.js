@@ -31,6 +31,7 @@ export const FOOD_DERIVATIVES = [
   { match: /\bmel\b|\bhoney\b/i,                                  name: "Honey",                       penalty: 6  },
   { match: /caprae\s*lac|goat'?s?\s*milk/i,                       name: "Goat milk",                   penalty: 18 },
   { match: /pyrus\s*communis|\bpear\s*(fruit\s*)?(juice|extract)/i, name: "Pear extract",              penalty: 5  },
+  { match: /carthamus\s*tinctorius|safflower\s*(seed\s*)?oil/i,    name: "Safflower seed oil",          penalty: 5  },
 ];
 
 // Sensitisers — each carries a plain-English reason and a cited source
